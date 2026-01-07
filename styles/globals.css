@@ -1,0 +1,158 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Botanix Color Palette - Cyber-Bauhaus adaptation */
+  --color-primary: #ffd966; /* dark yellow */
+  --color-primary-dark: #211d1d; /* dark grey */
+  --color-secondary: #fff366; /* light yellow */
+  --color-secondary-light: #ffffff; /* white */
+  
+  /* Cyber-Bauhaus colors */
+  --color-background: #0a0a0a; /* near black */
+  --color-surface: #1a1a1a; /* dark grey surface */
+  --color-border: #ffd966; /* yellow borders */
+  --color-text-primary: #ffffff; /* white text */
+  --color-text-secondary: #a0a0a0; /* grey text */
+  --color-text-inverse: #0a0a0a; /* black on yellow */
+  --color-accent: #ffd966; /* yellow accent */
+  --color-accent-neon: #00ff88; /* neon green */
+  --color-error: #ff3366;
+  --color-success: #00ff88;
+  
+  /* Cyber-Bauhaus effects */
+  --glow-yellow: 0 0 10px rgba(255, 217, 102, 0.5), 0 0 20px rgba(255, 217, 102, 0.3);
+  --glow-neon: 0 0 10px rgba(0, 255, 136, 0.5), 0 0 20px rgba(0, 255, 136, 0.3);
+  --border-width: 3px;
+  
+  /* Font stacks */
+  --font-geist: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-proxima: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-geist);
+  }
+  
+  body {
+    @apply bg-background text-text-primary;
+    margin: 0;
+    padding: 0;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-proxima);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer components {
+  .btn-cyber {
+    @apply px-6 py-3 bg-accent text-text-inverse font-bold uppercase tracking-wider transition-all duration-200;
+    border: var(--border-width) solid var(--color-accent);
+    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+  }
+  
+  .btn-cyber:hover:not(:disabled) {
+    background: var(--color-background);
+    color: var(--color-accent);
+    box-shadow: var(--glow-yellow);
+  }
+  
+  .btn-cyber:active:not(:disabled) {
+    transform: translateY(2px);
+  }
+  
+  .btn-cyber:disabled {
+    @apply opacity-40 cursor-not-allowed;
+    background: var(--color-surface);
+    color: #d4c050;
+    border-color: var(--color-text-secondary);
+  }
+  
+  .btn-cyber-secondary {
+    @apply px-6 py-3 bg-surface font-bold uppercase tracking-wider transition-all duration-200;
+    color: var(--color-error);
+    border: var(--border-width) solid var(--color-error);
+    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+  }
+  
+  .btn-cyber-secondary:hover {
+    background: var(--color-error);
+    color: var(--color-background);
+  }
+  
+  .card-cyber {
+    @apply bg-surface;
+    border: var(--border-width) solid var(--color-accent);
+    clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
+    position: relative;
+  }
+  
+  .card-cyber::before {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: -3px;
+    right: -3px;
+    bottom: -3px;
+    background: linear-gradient(45deg, var(--color-accent), var(--color-accent-neon), var(--color-accent));
+    opacity: 0;
+    transition: opacity 0.3s;
+    clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
+    z-index: -1;
+  }
+  
+  .card-cyber:hover::before {
+    opacity: 0.1;
+  }
+  
+  .badge-cyber {
+    @apply px-3 py-1 text-xs font-bold uppercase tracking-wider;
+    background: var(--color-surface);
+    border: 2px solid var(--color-accent);
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+  }
+  
+  .input-cyber {
+    @apply bg-surface transition-all duration-200;
+    border: 2px solid var(--color-text-secondary);
+    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+  }
+  
+  .input-cyber:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: var(--glow-yellow);
+  }
+  
+  .divider-cyber {
+    height: 2px;
+    background: linear-gradient(90deg, transparent 0%, var(--color-accent) 10%, var(--color-accent) 90%, transparent 100%);
+    position: relative;
+  }
+  
+  .divider-cyber::before,
+  .divider-cyber::after {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: var(--color-accent);
+    top: -3px;
+  }
+  
+  .divider-cyber::before {
+    left: 10%;
+    clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  }
+  
+  .divider-cyber::after {
+    right: 10%;
+    clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  }
+}
+
