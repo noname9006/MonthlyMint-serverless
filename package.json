@@ -1,0 +1,17 @@
+{
+  "name": "monthlymint-serverless",
+  "version": "1.0.0",
+  "description": "MonthlyMint serverless application for financial tracking",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'No build step required for static site'"
+  },
+  "keywords": [
+    "finance",
+    "budget",
+    "serverless"
+  ],
+  "author": "",
+  "license": "MIT"
+}
