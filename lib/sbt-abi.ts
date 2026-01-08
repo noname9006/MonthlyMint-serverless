@@ -3,7 +3,8 @@ export const SBT_ABI = [
   {
     "inputs": [
       { "internalType": "address", "name": "_signerAddress", "type": "address" },
-      { "internalType": "string", "name": "_baseURI", "type": "string" }
+      { "internalType": "string", "name": "_baseURI", "type": "string" },
+      { "internalType": "string", "name": "_defaultMediaURI", "type": "string" }
     ],
     "stateMutability": "nonpayable",
     "type": "constructor"
@@ -84,6 +85,15 @@ export const SBT_ABI = [
     "name": "nonces",
     "outputs": [
       { "internalType": "uint256", "name": "", "type": "uint256" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "defaultMediaURI",
+    "outputs": [
+      { "internalType": "string", "name": "", "type": "string" }
     ],
     "stateMutability": "view",
     "type": "function"
