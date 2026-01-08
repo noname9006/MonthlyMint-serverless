@@ -4,6 +4,8 @@ A Next.js web application that enables Discord-gated NFT minting on the Botanix 
 
 **✨ Optimized for Vercel serverless deployment with Vercel KV (Redis) storage.**
 
+> **⚠️ IMPORTANT:** This application **requires** Vercel KV (Redis) for data storage. You must create a Vercel KV database and configure the environment variables before running the application. See [Quick Start](#quick-start-local-development) for setup instructions.
+
 ## Features
 
 - **Discord OAuth2 Authentication** - Popup-based Discord login
@@ -18,13 +20,73 @@ A Next.js web application that enables Discord-gated NFT minting on the Botanix 
 
 ## Quick Start (Local Development)
 
-1. Clone this repository
-2. Run `npm install`
-3. Copy `.env.example` to `.env.local` and fill in your credentials
-   - **Important:** Set `NEXT_PUBLIC_NETWORK_ID` to `3636` for testnet or `3637` for mainnet
-   - **For local development:** Add KV_REST_API_URL and KV_REST_API_TOKEN from your Vercel project
-4. Run `npm run dev`
-5. Visit `http://localhost:3000`
+### Prerequisites
+- Node.js 18+ installed
+- A Vercel account (free tier works fine)
+- **REQUIRED:** Vercel KV database (see setup instructions below)
+
+### Setup Instructions
+
+1. **Clone this repository**
+   ```bash
+   git clone <your-repo-url>
+   cd MonthlyMint-serverless
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Set up Vercel KV (REQUIRED)**
+   
+   The application requires Vercel KV for data storage. You have two options:
+
+   **Option A: Use Vercel CLI (Recommended)**
+   ```bash
+   # Install Vercel CLI
+   npm i -g vercel
+   
+   # Link to your Vercel project (create one if needed at vercel.com)
+   vercel link
+   
+   # Create a KV database in your Vercel project:
+   # - Go to https://vercel.com/dashboard
+   # - Select your project → Storage tab
+   # - Click "Create Database" → Select "KV"
+   
+   # Pull environment variables (includes KV credentials)
+   vercel env pull .env.local
+   ```
+
+   **Option B: Manual Setup**
+   ```bash
+   # 1. Copy the example environment file
+   cp .env.example .env.local
+   
+   # 2. Get KV credentials from Vercel:
+   #    - Go to https://vercel.com/dashboard
+   #    - Select your project → Storage → Your KV database
+   #    - Click ".env.local" tab
+   #    - Copy KV_REST_API_URL and KV_REST_API_TOKEN values
+   
+   # 3. Edit .env.local and paste the KV credentials
+   # 4. Fill in other required environment variables (Discord, WalletConnect, etc.)
+   ```
+
+4. **Configure environment variables in `.env.local`**
+   - Set `NEXT_PUBLIC_NETWORK_ID` to `3636` for testnet or `3637` for mainnet
+   - Add your Discord OAuth credentials
+   - Add your WalletConnect Project ID
+   - Add contract addresses and backend private key
+   - See `.env.example` for all required variables
+
+5. **Run the development server**
+   ```bash
+   npm run dev
+   ```
+
+6. **Visit** `http://localhost:3000`
 
 **Note:** If you change any `NEXT_PUBLIC_*` environment variables after starting the dev server, you must restart it for changes to take effect (stop with Ctrl+C and run `npm run dev` again).
 
@@ -101,6 +163,20 @@ The `.env.local` file will now contain your KV credentials for local testing.
 ## Environment Variables
 
 All environment variables must be configured in `.env.local` (copy from `.env.example`):
+
+### Vercel KV Configuration (REQUIRED)
+```env
+# These are REQUIRED for the application to work
+# Automatically set by Vercel when you create and link a KV database
+# For local development, get these from your Vercel project:
+#   1. Go to https://vercel.com/dashboard
+#   2. Select your project → Storage tab
+#   3. Create a KV database if you haven't already
+#   4. Click on your KV database → .env.local tab
+#   5. Copy the values below
+KV_REST_API_URL=your_kv_rest_api_url_here
+KV_REST_API_TOKEN=your_kv_rest_api_token_here
+```
 
 ### Discord OAuth2 Configuration
 ```env
@@ -310,3 +386,47 @@ If you're familiar with the SQLite version:
 4. **No filesystem storage**: Everything is in Vercel KV or IPFS
 
 The API interface remains the same - only the storage backend has changed.
+
+## Troubleshooting
+
+### Error: "Missing required environment variables KV_REST_API_URL and KV_REST_API_TOKEN"
+
+This error occurs when trying to use the application without Vercel KV configured. To fix:
+
+**For Local Development:**
+1. Create a Vercel account at [vercel.com](https://vercel.com/signup)
+2. Create a new project or link to an existing one
+3. Go to your project → Storage tab
+4. Click "Create Database" → Select "KV"
+5. Get the credentials using one of these methods:
+
+   **Option A: Vercel CLI (Easiest)**
+   ```bash
+   npm i -g vercel
+   vercel link
+   vercel env pull .env.local
+   ```
+
+   **Option B: Manual**
+   - Go to Storage → Your KV database → .env.local tab
+   - Copy `KV_REST_API_URL` and `KV_REST_API_TOKEN`
+   - Add them to your `.env.local` file
+
+**For Vercel Deployment:**
+1. Go to your Vercel project dashboard
+2. Navigate to Storage tab
+3. Click "Create Database" → Select "KV"
+4. The environment variables will be set automatically
+5. Redeploy your application
+
+### Discord Authentication Fails
+
+- Verify `DISCORD_REDIRECT_URI` matches your deployment URL
+- Check Discord app redirect URL is configured correctly at [Discord Developer Portal](https://discord.com/developers/applications)
+- Ensure `DISCORD_CLIENT_SECRET` is set correctly
+
+### Wallet Connection Issues
+
+- Verify `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` is set
+- Check `NEXT_PUBLIC_NETWORK_ID` is correct (3636 for testnet, 3637 for mainnet)
+- Ensure contract addresses are valid
