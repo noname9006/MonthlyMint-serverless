@@ -176,6 +176,15 @@ All environment variables must be configured in `.env.local` (copy from `.env.ex
 #   5. Copy the values below
 KV_REST_API_URL=your_kv_rest_api_url_here
 KV_REST_API_TOKEN=your_kv_rest_api_token_here
+
+# Alternative: If your storage provider uses STORAGE1_* prefixed variables,
+# you can use them directly without renaming. Simply copy and paste:
+# STORAGE1_KV_REST_API_URL=
+# STORAGE1_KV_REST_API_TOKEN=
+# STORAGE1_KV_REST_API_READ_ONLY_TOKEN=
+# STORAGE1_KV_URL=
+# STORAGE1_REDIS_URL=
+# The application will automatically map these to the standard KV_* names.
 ```
 
 ### Discord OAuth2 Configuration
