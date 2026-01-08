@@ -40,6 +40,10 @@ export default function Home() {
   const { disconnect } = useDisconnect()
   const lastLoggedAddress = useRef<string | undefined>(undefined)
   const hasShownPopup = useRef(false)
+  
+  // Discord popup timer management
+  const discordPopupTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const discordPopupIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   // Check mint status when wallet connects and Discord is verified
   useEffect(() => {
@@ -88,13 +92,13 @@ export default function Home() {
       if (!event.data || event.data.source !== 'discord-auth') return
 
       // Clear timeout and interval since auth completed
-      if ((window as any).__discordPopupTimeout) {
-        clearTimeout((window as any).__discordPopupTimeout)
-        ;(window as any).__discordPopupTimeout = null
+      if (discordPopupTimeoutRef.current) {
+        clearTimeout(discordPopupTimeoutRef.current)
+        discordPopupTimeoutRef.current = null
       }
-      if ((window as any).__discordPopupCheckInterval) {
-        clearInterval((window as any).__discordPopupCheckInterval)
-        ;(window as any).__discordPopupCheckInterval = null
+      if (discordPopupIntervalRef.current) {
+        clearInterval(discordPopupIntervalRef.current)
+        discordPopupIntervalRef.current = null
       }
 
       if (event.data.status === 'success') {
@@ -180,7 +184,7 @@ export default function Home() {
     }
 
     // Set timeout to reset loading state after 60 seconds
-    const timeoutId = setTimeout(() => {
+    discordPopupTimeoutRef.current = setTimeout(() => {
       if (popup && !popup.closed) {
         popup.close()
       }
@@ -189,10 +193,17 @@ export default function Home() {
     }, 60000)
 
     // Check if popup was closed manually
-    const checkPopupClosed = setInterval(() => {
+    // The 100ms delay allows the postMessage handler to complete if auth succeeded before we reset state
+    discordPopupIntervalRef.current = setInterval(() => {
       if (popup.closed) {
-        clearInterval(checkPopupClosed)
-        clearTimeout(timeoutId)
+        if (discordPopupIntervalRef.current) {
+          clearInterval(discordPopupIntervalRef.current)
+          discordPopupIntervalRef.current = null
+        }
+        if (discordPopupTimeoutRef.current) {
+          clearTimeout(discordPopupTimeoutRef.current)
+          discordPopupTimeoutRef.current = null
+        }
         // Only reset loading if Discord auth hasn't completed
         // (if auth completed, handleMessage will have already set loading to false)
         setTimeout(() => {
@@ -207,22 +218,17 @@ export default function Home() {
         }, 100)
       }
     }, 500)
-
-    // Store interval ID to clean up when auth completes
-    // We'll clear it in the message handler
-    ;(window as any).__discordPopupCheckInterval = checkPopupClosed
-    ;(window as any).__discordPopupTimeout = timeoutId
   }
 
   const handleDiscordLogout = () => {
     // Clear any active timers from Discord popup
-    if ((window as any).__discordPopupTimeout) {
-      clearTimeout((window as any).__discordPopupTimeout)
-      ;(window as any).__discordPopupTimeout = null
+    if (discordPopupTimeoutRef.current) {
+      clearTimeout(discordPopupTimeoutRef.current)
+      discordPopupTimeoutRef.current = null
     }
-    if ((window as any).__discordPopupCheckInterval) {
-      clearInterval((window as any).__discordPopupCheckInterval)
-      ;(window as any).__discordPopupCheckInterval = null
+    if (discordPopupIntervalRef.current) {
+      clearInterval(discordPopupIntervalRef.current)
+      discordPopupIntervalRef.current = null
     }
 
     // Disconnect wallet first if connected
