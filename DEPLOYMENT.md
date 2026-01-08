@@ -182,6 +182,7 @@ npm run dev
 1. **Missing environment variables**: Ensure all required vars are set
 2. **TypeScript errors**: Run `npm run build` locally first
 3. **Dependency issues**: Make sure `package.json` is up to date
+4. **Next.js telemetry warning**: The telemetry notice is disabled by default in `vercel.json`. If you see it, ensure `NEXT_TELEMETRY_DISABLED=1` is set in build environment.
 
 ### Runtime Errors
 
@@ -194,6 +195,7 @@ npm run dev
 - Verify `DISCORD_REDIRECT_URI` matches your Vercel URL
 - Check Discord app redirect URL is configured correctly
 - Ensure `DISCORD_CLIENT_SECRET` is set correctly
+- If seeing "Discord authentication was cancelled" errors even when completing auth, ensure you're using the latest version with the popup timing fixes
 
 **Wallet connection fails:**
 - Verify `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` is set

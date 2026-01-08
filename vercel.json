@@ -1,4 +1,9 @@
 {
   "buildCommand": "npm run build",
-  "framework":  "nextjs"
+  "framework":  "nextjs",
+  "build": {
+    "env": {
+      "NEXT_TELEMETRY_DISABLED": "1"
+    }
+  }
 }

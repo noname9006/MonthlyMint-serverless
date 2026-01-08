@@ -22,6 +22,11 @@ type DiscordAuthMessage =
   | { source: 'discord-auth'; status: 'success'; user: DiscordUser; member: GuildMember | null; highestRole: { id: string; name: RoleName } | null }
   | { source: 'discord-auth'; status: 'error'; error: string }
 
+// Discord popup timing constants
+const DISCORD_POPUP_TIMEOUT = 60000 // 60 seconds before timing out
+const DISCORD_POPUP_CHECK_INTERVAL = 2000 // Check popup status every 2 seconds
+const DISCORD_POSTMESSAGE_DELAY = 500 // Wait 500ms for postMessage to complete
+
 export default function Home() {
   const [discordUser, setDiscordUser] = useState<DiscordUser | null>(null)
   const [guildMember, setGuildMember] = useState<GuildMember | null>(null)
@@ -188,7 +193,7 @@ export default function Home() {
       return
     }
 
-    // Set timeout to reset loading state after 60 seconds
+    // Set timeout to reset loading state after configured timeout
     discordPopupTimeoutRef.current = setTimeout(() => {
       clearDiscordTimers()
       if (popup && !popup.closed) {
@@ -196,14 +201,14 @@ export default function Home() {
       }
       setDiscordLoading(false)
       setDiscordError('Discord authentication timed out. Please try again.')
-    }, 60000)
+    }, DISCORD_POPUP_TIMEOUT)
 
     // Check if popup was closed manually
-    // Using a short delay before checking to allow postMessage to be processed first
+    // Using a longer interval to reduce false positives from race conditions
     discordPopupIntervalRef.current = setInterval(() => {
       if (popup.closed) {
         clearDiscordTimers()
-        // Defer state check to next tick to ensure postMessage handler completes first
+        // Wait for postMessage handler to complete before checking auth status
         setTimeout(() => {
           // Check if auth completed via postMessage (loading would be false)
           setDiscordLoading(prev => {
@@ -214,9 +219,9 @@ export default function Home() {
             }
             return prev
           })
-        }, 0)
+        }, DISCORD_POSTMESSAGE_DELAY)
       }
-    }, 1000)
+    }, DISCORD_POPUP_CHECK_INTERVAL)
   }
 
   const handleDiscordLogout = () => {
