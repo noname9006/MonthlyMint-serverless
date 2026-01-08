@@ -93,7 +93,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
   const { data: contractMediaURI, isLoading: isLoadingMediaURI } = useReadContract({
     address: contractAddress as `0x${string}`,
     abi: SBT_ABI,
-    functionName: 'defaultMediaURI',
+    functionName: 'baseURI',
     query: {
       enabled: !!contractAddress,
     },
@@ -133,7 +133,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
       const result = await readContract(config, {
         address: contractAddr as `0x${string}`,
         abi: SBT_ABI,
-        functionName: 'defaultMediaURI',
+        functionName: 'baseURI',
       })
       return result as string
     } catch (error) {
