@@ -73,9 +73,6 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
   // Map transaction hashes to tier names to track multiple simultaneous mints
   const [txHashToTierName, setTxHashToTierName] = useState<Record<string, string>>({})
   
-  // State for storing fetched media URIs from contracts
-  const [mediaURIs, setMediaURIs] = useState<Record<string, string>>({})
-  
   // Combine prop and local state to determine if minted
   const isMinted = alreadyMinted || localMinted
   
@@ -525,7 +522,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
           </span>
         </div>
       )}
-      {isMainPage && <p className="text-text-secondary mb-4">Your NFT is minted from a role-specific contract with predefined media.</p>}
+      {isMainPage && <p className="text-text-secondary mb-4">Your NFT is minted from a role-specific contract. The media is dynamically fetched from the contract.</p>}
 
       <div className="flex gap-5 flex-wrap mt-4">
         <div className="flex-1 min-w-[300px]">
