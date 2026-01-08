@@ -203,19 +203,20 @@ export default function Home() {
     discordPopupIntervalRef.current = setInterval(() => {
       if (popup.closed) {
         clearDiscordTimers()
-        // Use requestAnimationFrame to defer state check until after any pending postMessage
-        requestAnimationFrame(() => {
+        // Defer state check to next tick to ensure postMessage handler completes first
+        setTimeout(() => {
+          // Check if auth completed via postMessage (loading would be false)
           setDiscordLoading(prev => {
-            // Only reset if still loading (auth didn't complete via postMessage)
             if (prev) {
+              // Still loading means auth didn't complete - show cancellation error
               setDiscordError('Discord authentication was cancelled. Please try again.')
               return false
             }
             return prev
           })
-        })
+        }, 0)
       }
-    }, 500)
+    }, 1000)
   }
 
   const handleDiscordLogout = () => {
