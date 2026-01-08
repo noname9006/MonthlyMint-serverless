@@ -22,6 +22,16 @@ function getUserAgent(req: NextApiRequest): string | undefined {
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const code = typeof req.query.code === 'string' ? req.query.code : null
   const state = typeof req.query.state === 'string' ? req.query.state : null
+  const error = typeof req.query.error === 'string' ? req.query.error : null
+
+  // Handle Discord OAuth errors (e.g., user cancelled authorization)
+  if (error) {
+    const errorDescription = typeof req.query.error_description === 'string' ? req.query.error_description : null
+    const errorMessage = error === 'access_denied' 
+      ? 'Discord authorization was cancelled. Please try again.'
+      : errorDescription || `Discord authorization failed: ${error}`
+    return renderClosePage(res, { status: 'error', error: errorMessage })
+  }
 
   if (!code) {
     return res.status(400).send('Missing "code" parameter')
