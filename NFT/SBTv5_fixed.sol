@@ -42,6 +42,7 @@ contract ComplexSoulboundToken is ERC721URIStorage, Ownable {
     
     address public signerAddress;
     string public baseURI;
+    string public defaultMediaURI;  // Default media URI for this contract
     bytes32 public immutable DOMAIN_SEPARATOR;
     bytes32 public constant MINT_TYPEHASH = keccak256("Mint(address to,string metadata,string mediaURI,string credentialType,string issuerName,uint256 nonce,uint256 level)");
     
@@ -49,12 +50,13 @@ contract ComplexSoulboundToken is ERC721URIStorage, Ownable {
     event AuditRecordCreated(uint256 indexed tokenId, bytes32 indexed commitmentRoot, bytes32 domainHash);
     event CommitmentVerified(address indexed user, bytes32 commitment);
     
-    constructor(address _signerAddress, string memory _baseURI) 
+    constructor(address _signerAddress, string memory _baseURI, string memory _defaultMediaURI) 
         ERC721("SoulboundToken", "SBT") 
         Ownable(msg.sender) 
     {
         signerAddress = _signerAddress;
         baseURI = _baseURI;
+        defaultMediaURI = _defaultMediaURI;
         _tokenIdCounter = 0;
         
         // Initialize EIP-712 domain separator for enhanced security

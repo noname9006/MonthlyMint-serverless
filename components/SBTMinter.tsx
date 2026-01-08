@@ -1,35 +1,30 @@
 import { useState, useEffect } from 'react'
-import { useAccount, useWriteContract, useConfig } from 'wagmi'
+import { useAccount, useWriteContract, useConfig, useReadContract } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { SBT_ABI } from '@/lib/sbt-abi'
 import { chainConfig } from '@/lib/chains'
 
 // Role-specific contract configurations
-// Each role has its own dedicated NFT contract and predefined media
-const ROLE_CONTRACTS: Record<string, { contractAddress: string; mediaURI: string }> = {
+// Each role has its own dedicated NFT contract
+// Media URIs are now fetched from the contracts themselves
+const ROLE_CONTRACTS: Record<string, { contractAddress: string }> = {
   'Botanist': {
     contractAddress: process.env.NEXT_PUBLIC_BOTANIST_CONTRACT_ADDRESS || '',
-    mediaURI: 'ipfs://bafkreifidlnietci72bpenigi2sgbmuisfm6zslmofcmpdig7r5pum5qn4',
   },
   'Hyperion Ambassador': {
     contractAddress: process.env.NEXT_PUBLIC_HYPERION_CONTRACT_ADDRESS || '',
-    mediaURI: 'ipfs://bafkreigdx4shrxrxiyie7j7szil4xi4wvngwzptqng7ag6zzqvir754m2y',
   },
   'Sequoia Ambassador': {
     contractAddress: process.env.NEXT_PUBLIC_SEQUOIA_CONTRACT_ADDRESS || '',
-    mediaURI: 'ipfs://bafkreifnnroi2fcktt55ltrwqlsym7a64sqpcezczzkgdhbm4ankqaz3re',
   },
   'Blossom Ambassador': {
     contractAddress: process.env.NEXT_PUBLIC_BLOSSOM_CONTRACT_ADDRESS || '',
-    mediaURI: 'ipfs://bafkreihweinusq27uludqht6ckjd63coaxb6x4lpuvu7axwu2dlew7qulu',
   },
   'Seedling Ambassador': {
     contractAddress: process.env.NEXT_PUBLIC_SEEDLING_CONTRACT_ADDRESS || '',
-    mediaURI: 'ipfs://bafkreie2cg6i5owtxjpi55blms6rqhwxfz4wx5w6jdrlthxaf5ulrm42r4',
   },
   'Sprout': {
     contractAddress: process.env.NEXT_PUBLIC_SPROUT_CONTRACT_ADDRESS || '',
-    mediaURI: 'ipfs://bafkreigdrt43i6qpqsflbcao3qvxae75qjgk7vrn4vosbevkbvfktn63km',
   },
 }
 
@@ -78,6 +73,9 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
   // Map transaction hashes to tier names to track multiple simultaneous mints
   const [txHashToTierName, setTxHashToTierName] = useState<Record<string, string>>({})
   
+  // State for storing fetched media URIs from contracts
+  const [mediaURIs, setMediaURIs] = useState<Record<string, string>>({})
+  
   // Combine prop and local state to determine if minted
   const isMinted = alreadyMinted || localMinted
   
@@ -90,10 +88,22 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
   // Check if rendering in main page or modal context
   const isMainPage = sectionNumber > 0
 
-  // Get role-specific contract and media URI
+  // Get role-specific contract
   const roleConfig = ROLE_CONTRACTS[roleName]
   const contractAddress = roleConfig?.contractAddress
-  const mediaURI = roleConfig?.mediaURI || 'ipfs://QmDefaultImageHash'
+  
+  // Read the default media URI from the contract
+  const { data: contractMediaURI, isLoading: isLoadingMediaURI } = useReadContract({
+    address: contractAddress as `0x${string}`,
+    abi: SBT_ABI,
+    functionName: 'defaultMediaURI',
+    query: {
+      enabled: !!contractAddress,
+    },
+  })
+  
+  // Use fetched media URI or fallback to empty string
+  const mediaURI = (contractMediaURI as string) || ''
   
   // Convert IPFS URI to gateway URL for display
   const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://ipfs.io/ipfs'
@@ -119,6 +129,22 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
   }
 
   const { writeContractAsync: mintWithSignatureAsync, reset: resetWriteContract } = useWriteContract()
+
+  // Helper function to fetch media URI from a contract
+  const fetchMediaURIFromContract = async (contractAddr: string): Promise<string> => {
+    try {
+      const { readContract } = await import('wagmi/actions')
+      const result = await readContract(config, {
+        address: contractAddr as `0x${string}`,
+        abi: SBT_ABI,
+        functionName: 'defaultMediaURI',
+      })
+      return result as string
+    } catch (error) {
+      console.error(`Failed to fetch media URI from contract ${contractAddr}:`, error)
+      return ''
+    }
+  }
 
   // Helper function to wait for transaction and log the mint
   const waitForTransactionAndLog = async (txHash: `0x${string}`, tierName: string) => {
@@ -161,6 +187,9 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
         return
       }
 
+      // Fetch media URI from contract
+      const tierMediaURI = await fetchMediaURIFromContract(tierConfig.contractAddress)
+
       // Call the log-mint API
       const response = await fetch('/api/nft/log-mint', {
         method: 'POST',
@@ -173,7 +202,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
           roleName: tierName,
           credentialType: credentialType,
           metadata: metadata,
-          mediaUri: tierConfig.mediaURI,
+          mediaUri: tierMediaURI,
           level: level,
         }),
       })
@@ -402,6 +431,9 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
     }))
 
     try {
+      // Fetch media URI from the tier contract
+      const tierMediaURI = await fetchMediaURIFromContract(tierRoleConfig.contractAddress)
+      
       // Get the signature
       const response = await fetch('/api/nft/generate-mint-signature', {
         method: 'POST',
@@ -409,7 +441,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
         body: JSON.stringify({
           userWalletAddress: address,
           metadata: metadata,
-          mediaURI: tierRoleConfig.mediaURI,
+          mediaURI: tierMediaURI,
           credentialType: credentialType,
           issuerName: issuerName,
           level: level,
@@ -455,7 +487,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
         args: [
           address,
           metadata,
-          tierRoleConfig.mediaURI,
+          tierMediaURI,
           credentialType,
           issuerName,
           BigInt(nonce),

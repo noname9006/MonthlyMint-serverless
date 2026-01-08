@@ -276,14 +276,14 @@ The application includes a complete SBT (Soulbound Token) minting system integra
 
 ### Architecture
 - **6 Separate NFT Contracts** - One dedicated contract per Discord role
-- **Role-Based System** - Each role (Botanist, Hyperion Ambassador, Sequoia Ambassador, Blossom Ambassador, Seedling Ambassador, Sprout) has its own contract and predefined media
-- **Predefined Media** - Each contract has its own IPFS URI for NFT images
+- **Role-Based System** - Each role (Botanist, Hyperion Ambassador, Sequoia Ambassador, Blossom Ambassador, Seedling Ambassador, Sprout) has its own contract
+- **Dynamic Media URIs** - Each contract stores its own default media URI (IPFS URI for NFT images) which is fetched dynamically by the frontend
 
 ### Components
-- **SBTMinter Component** - React component that selects the appropriate contract based on user's Discord role
+- **SBTMinter Component** - React component that selects the appropriate contract based on user's Discord role and fetches media URIs from the contract
 - **API Routes**:
   - `/api/nft/generate-mint-signature` - Generates backend signature for minting
-- **Smart Contract** - Solidity contract in `/NFT/contract_gas.sol` (deploy 6 instances)
+- **Smart Contract** - Solidity contract in `/NFT/SBTv5_fixed.sol` (deploy 6 instances, each with its own default media URI)
 
 ### Configuration
 
@@ -308,6 +308,8 @@ NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_walletconnect_project_id_here
 
 # NFT/SBT Configuration - One contract per Discord role
 # Deploy 6 instances of the SBT contract (one for each role)
+# Each contract should be deployed with its own defaultMediaURI parameter
+# The frontend will fetch the media URI from each contract dynamically
 # Contract address for Botanist role (highest tier)
 NEXT_PUBLIC_BOTANIST_CONTRACT_ADDRESS=your_botanist_contract_address_here
 # Contract address for Hyperion Ambassador role
@@ -326,16 +328,40 @@ NEXT_PUBLIC_SPROUT_CONTRACT_ADDRESS=your_sprout_contract_address_here
 BACKEND_PRIVATE_KEY=your_backend_wallet_private_key_here
 ```
 
-**Note:** Configure the predefined IPFS URIs for each role in `components/SBTMinter.tsx` in the `ROLE_CONTRACTS` constant.
+**Note:** When deploying each contract, pass the appropriate IPFS URI as the `_defaultMediaURI` parameter in the constructor. The frontend will automatically fetch and use these URIs from the contracts.
+
+### Contract Deployment
+
+When deploying the SBT contract for each role, use the following constructor parameters:
+```solidity
+constructor(
+  address _signerAddress,    // Backend wallet address that signs mint approvals
+  string memory _baseURI,     // Base URI for metadata (e.g., "https://your-api.com/metadata/")
+  string memory _defaultMediaURI  // IPFS URI for the role's NFT image (e.g., "ipfs://QmYourImageHash")
+)
+```
+
+Example deployment for Botanist role:
+```javascript
+// Deploy contract with media URI
+const contract = await deploy("ComplexSoulboundToken", [
+  backendWalletAddress,
+  "https://your-api.com/metadata/",
+  "ipfs://bafkreifidlnietci72bpenigi2sgbmuisfm6zslmofcmpdig7r5pum5qn4"  // Botanist NFT image
+])
+```
+
+Repeat for each role with their respective media URIs.
 
 ### Usage Flow
 
 1. User verifies Discord membership and role is detected
 2. User connects wallet to Botanix network
-3. System selects the appropriate contract and media based on user's Discord role
-4. User fills in token metadata (credential type, issuer, expiry, level)
-5. User gets signature from backend
-6. User mints SBT from their role-specific contract
+3. System selects the appropriate contract based on user's Discord role
+4. System fetches the media URI from the selected contract
+5. User fills in token metadata (credential type, issuer, expiry, level)
+6. User gets signature from backend
+7. User mints SBT from their role-specific contract with the fetched media URI
 
 ## Production Deployment
 
