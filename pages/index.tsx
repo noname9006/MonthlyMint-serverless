@@ -199,11 +199,11 @@ export default function Home() {
     }, 60000)
 
     // Check if popup was closed manually
-    // Using a short delay before checking to allow postMessage to be processed first
+    // Using a longer interval (2 seconds) to reduce false positives
     discordPopupIntervalRef.current = setInterval(() => {
       if (popup.closed) {
         clearDiscordTimers()
-        // Defer state check to next tick to ensure postMessage handler completes first
+        // Wait 500ms to ensure postMessage handler has time to complete
         setTimeout(() => {
           // Check if auth completed via postMessage (loading would be false)
           setDiscordLoading(prev => {
@@ -214,9 +214,9 @@ export default function Home() {
             }
             return prev
           })
-        }, 0)
+        }, 500)
       }
-    }, 1000)
+    }, 2000)
   }
 
   const handleDiscordLogout = () => {
