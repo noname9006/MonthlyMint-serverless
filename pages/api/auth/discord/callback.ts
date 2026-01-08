@@ -34,7 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (!code) {
-    return res.status(400).send('Missing "code" parameter')
+    return renderClosePage(res, { status: 'error', error: 'Missing authorization code. Please try again.' })
   }
 
   const storedState = req.cookies?.[STATE_COOKIE]
