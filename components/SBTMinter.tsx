@@ -302,6 +302,15 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
     resetWriteContract() // Reset previous transaction state
     
     try {
+      // Fetch media URI from contract to ensure we have the latest value
+      const currentMediaURI = await fetchMediaURIFromContract(contractAddress)
+      
+      if (!currentMediaURI) {
+        setError('Failed to fetch media URI from contract')
+        setLoading(false)
+        return
+      }
+      
       // First, get the signature
       const response = await fetch('/api/nft/generate-mint-signature', {
         method: 'POST',
@@ -309,7 +318,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
         body: JSON.stringify({
           userWalletAddress: address,
           metadata: metadata,
-          mediaURI: mediaURI,
+          mediaURI: currentMediaURI,
           credentialType: credentialType,
           issuerName: issuerName,
           level: level,
@@ -349,7 +358,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
         args: [
           address,
           metadata,
-          mediaURI,
+          currentMediaURI,
           credentialType,
           issuerName,
           BigInt(nonce),
