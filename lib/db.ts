@@ -77,8 +77,10 @@ export async function createUser(discordId: string, username?: string, globalNam
   }
   
   // Store user by discord ID and by numeric ID
-  await kv.set(`user:discord:${discordId}`, user)
-  await kv.set(`user:id:${id}`, user)
+  await handleKVOperation(async () => {
+    await kv.set(`user:discord:${discordId}`, user)
+    await kv.set(`user:id:${id}`, user)
+  })
   
   return user
 }
@@ -94,8 +96,10 @@ export async function updateUser(discordId: string, username?: string, globalNam
     updated_at: new Date().toISOString(),
   }
   
-  await kv.set(`user:discord:${discordId}`, updatedUser)
-  await kv.set(`user:id:${user.id}`, updatedUser)
+  await handleKVOperation(async () => {
+    await kv.set(`user:discord:${discordId}`, updatedUser)
+    await kv.set(`user:id:${user.id}`, updatedUser)
+  })
 }
 
 export async function getOrCreateUser(discordId: string, username?: string, globalName?: string): Promise<User> {
@@ -133,8 +137,10 @@ export interface DiscordAuthLog {
 }
 
 async function getNextAuthLogId(): Promise<number> {
-  const id = await kv.incr('discord_auth_log:id:counter')
-  return id
+  return handleKVOperation(async () => {
+    const id = await kv.incr('discord_auth_log:id:counter')
+    return id
+  })
 }
 
 export async function logDiscordAuth(log: DiscordAuthLog): Promise<void> {
@@ -170,8 +176,10 @@ export interface WalletConnectLog {
 }
 
 async function getNextWalletLogId(): Promise<number> {
-  const id = await kv.incr('wallet_connect_log:id:counter')
-  return id
+  return handleKVOperation(async () => {
+    const id = await kv.incr('wallet_connect_log:id:counter')
+    return id
+  })
 }
 
 export async function logWalletConnect(log: WalletConnectLog): Promise<void> {
@@ -205,8 +213,10 @@ export interface DiscordWalletConnection {
 }
 
 async function getNextConnectionId(): Promise<number> {
-  const id = await kv.incr('discord_wallet_connection:id:counter')
-  return id
+  return handleKVOperation(async () => {
+    const id = await kv.incr('discord_wallet_connection:id:counter')
+    return id
+  })
 }
 
 export async function createDiscordWalletConnection(discordId: string, userId: number, evmAddress: string): Promise<void> {
@@ -307,8 +317,10 @@ export interface SbtMintEvent {
 }
 
 async function getNextMintEventId(): Promise<number> {
-  const id = await kv.incr('sbt_mint_event:id:counter')
-  return id
+  return handleKVOperation(async () => {
+    const id = await kv.incr('sbt_mint_event:id:counter')
+    return id
+  })
 }
 
 // Log a new mint event
