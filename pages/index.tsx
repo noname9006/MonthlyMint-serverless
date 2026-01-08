@@ -40,6 +40,22 @@ export default function Home() {
   const { disconnect } = useDisconnect()
   const lastLoggedAddress = useRef<string | undefined>(undefined)
   const hasShownPopup = useRef(false)
+  
+  // Discord popup timer management
+  const discordPopupTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const discordPopupIntervalRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Helper function to clear Discord popup timers
+  const clearDiscordTimers = () => {
+    if (discordPopupTimeoutRef.current) {
+      clearTimeout(discordPopupTimeoutRef.current)
+      discordPopupTimeoutRef.current = null
+    }
+    if (discordPopupIntervalRef.current) {
+      clearInterval(discordPopupIntervalRef.current)
+      discordPopupIntervalRef.current = null
+    }
+  }
 
   // Check mint status when wallet connects and Discord is verified
   useEffect(() => {
@@ -86,6 +102,9 @@ export default function Home() {
   useEffect(() => {
     const handleMessage = (event: MessageEvent<DiscordAuthMessage>) => {
       if (!event.data || event.data.source !== 'discord-auth') return
+
+      // Clear timeout and interval since auth completed
+      clearDiscordTimers()
 
       if (event.data.status === 'success') {
         setDiscordUser(event.data.user)
@@ -166,10 +185,44 @@ export default function Home() {
     if (!popup) {
       setDiscordLoading(false)
       setDiscordError('Разрешите всплывающие окна, чтобы авторизоваться через Discord')
+      return
     }
+
+    // Set timeout to reset loading state after 60 seconds
+    discordPopupTimeoutRef.current = setTimeout(() => {
+      clearDiscordTimers()
+      if (popup && !popup.closed) {
+        popup.close()
+      }
+      setDiscordLoading(false)
+      setDiscordError('Discord authentication timed out. Please try again.')
+    }, 60000)
+
+    // Check if popup was closed manually
+    // Using a short delay before checking to allow postMessage to be processed first
+    discordPopupIntervalRef.current = setInterval(() => {
+      if (popup.closed) {
+        clearDiscordTimers()
+        // Defer state check to next tick to ensure postMessage handler completes first
+        setTimeout(() => {
+          // Check if auth completed via postMessage (loading would be false)
+          setDiscordLoading(prev => {
+            if (prev) {
+              // Still loading means auth didn't complete - show cancellation error
+              setDiscordError('Discord authentication was cancelled. Please try again.')
+              return false
+            }
+            return prev
+          })
+        }, 0)
+      }
+    }, 1000)
   }
 
   const handleDiscordLogout = () => {
+    // Clear any active timers from Discord popup
+    clearDiscordTimers()
+
     // Disconnect wallet first if connected
     if (isConnected) {
       disconnect()
@@ -180,6 +233,7 @@ export default function Home() {
     setGuildMember(null)
     setHighestRole(null)
     setDiscordError(null)
+    setDiscordLoading(false)
     
     // Clear any persisted state
     localStorage.removeItem('discord_user')
