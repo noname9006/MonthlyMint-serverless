@@ -91,7 +91,7 @@ export const SBT_ABI = [
   },
   {
     "inputs": [],
-    "name": "defaultMediaURI",
+    "name": "baseURI",
     "outputs": [
       { "internalType": "string", "name": "", "type": "string" }
     ],
