@@ -544,10 +544,10 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
           <div className="flex gap-3 mt-5">
             <button
               onClick={handleMint}
-              disabled={isMinted || loading || !address || !!pendingTxHash}
+              disabled={isMinted || loading || !address || !!pendingTxHash || isLoadingMediaURI}
               className="btn-cyber w-full"
             >
-              {loading ? 'Minting...' : pendingTxHash ? 'Minting...' : isMinted ? 'Minted, see you next month!' : 'Mint your SBT (Freemint)'}
+              {isLoadingMediaURI ? 'Loading media...' : loading ? 'Minting...' : pendingTxHash ? 'Minting...' : isMinted ? 'Minted, see you next month!' : 'Mint your SBT (Freemint)'}
             </button>
           </div>
 
@@ -626,15 +626,27 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
 
         <div className="flex-1 min-w-[300px]">
           <div className="card-cyber p-4 flex justify-center items-center">
-            <img 
-              src={mediaGatewayURL} 
-              alt={`${roleName} NFT`}
-              className="max-w-full max-h-96 object-contain"
-              style={{filter: 'drop-shadow(0 0 10px rgba(255, 217, 102, 0.3))'}}
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = FALLBACK_IMAGE
-              }}
-            />
+            {isLoadingMediaURI ? (
+              <div className="max-w-full max-h-96 flex items-center justify-center">
+                <p className="text-text-secondary">Loading media...</p>
+              </div>
+            ) : mediaGatewayURL ? (
+              <img 
+                src={mediaGatewayURL} 
+                alt={`${roleName} NFT`}
+                className="max-w-full max-h-96 object-contain"
+                style={{filter: 'drop-shadow(0 0 10px rgba(255, 217, 102, 0.3))'}}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = FALLBACK_IMAGE
+                }}
+              />
+            ) : (
+              <img 
+                src={FALLBACK_IMAGE} 
+                alt="No media available"
+                className="max-w-full max-h-96 object-contain"
+              />
+            )}
           </div>
         </div>
       </div>
