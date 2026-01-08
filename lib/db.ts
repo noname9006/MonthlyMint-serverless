@@ -1,5 +1,42 @@
 import { kv } from '@vercel/kv'
 
+// Helper function to provide better error messages when KV is not configured
+function createKVError(): Error {
+  const error = new Error(
+    'Vercel KV is not configured. To fix this:\n\n' +
+    '1. For Vercel Deployment:\n' +
+    '   - Go to your Vercel project dashboard\n' +
+    '   - Navigate to the "Storage" tab\n' +
+    '   - Click "Create Database" and select "KV"\n' +
+    '   - Vercel will automatically set KV_REST_API_URL and KV_REST_API_TOKEN\n\n' +
+    '2. For Local Development:\n' +
+    '   - Option A: Use Vercel CLI:\n' +
+    '     * Run: npm i -g vercel\n' +
+    '     * Run: vercel link\n' +
+    '     * Run: vercel env pull .env.local\n' +
+    '   - Option B: Manual setup:\n' +
+    '     * Go to https://vercel.com/dashboard\n' +
+    '     * Select your project → Storage → Your KV database\n' +
+    '     * Click ".env.local" tab\n' +
+    '     * Copy KV_REST_API_URL and KV_REST_API_TOKEN to your .env.local file\n\n' +
+    'For more details, see: README.md and DEPLOYMENT.md'
+  )
+  error.name = 'KVNotConfiguredError'
+  return error
+}
+
+// Wrapper to catch KV configuration errors and provide helpful messages
+async function handleKVOperation<T>(operation: () => Promise<T>): Promise<T> {
+  try {
+    return await operation()
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('Missing required environment variables')) {
+      throw createKVError()
+    }
+    throw error
+  }
+}
+
 // User Management Functions
 
 export interface User {
@@ -13,13 +50,17 @@ export interface User {
 
 // Auto-incrementing ID counter
 async function getNextUserId(): Promise<number> {
-  const id = await kv.incr('user:id:counter')
-  return id
+  return handleKVOperation(async () => {
+    const id = await kv.incr('user:id:counter')
+    return id
+  })
 }
 
 export async function getUserByDiscordId(discordId: string): Promise<User | null> {
-  const user = await kv.get<User>(`user:discord:${discordId}`)
-  return user
+  return handleKVOperation(async () => {
+    const user = await kv.get<User>(`user:discord:${discordId}`)
+    return user
+  })
 }
 
 export async function createUser(discordId: string, username?: string, globalName?: string): Promise<User> {
