@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAccount, useWriteContract, useConfig, useReadContract } from 'wagmi'
-import { waitForTransactionReceipt } from 'wagmi/actions'
+import { waitForTransactionReceipt, readContract } from 'wagmi/actions'
 import { SBT_ABI } from '@/lib/sbt-abi'
 import { chainConfig } from '@/lib/chains'
 
@@ -130,7 +130,6 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
   // Helper function to fetch media URI from a contract
   const fetchMediaURIFromContract = async (contractAddr: string): Promise<string> => {
     try {
-      const { readContract } = await import('wagmi/actions')
       const result = await readContract(config, {
         address: contractAddr as `0x${string}`,
         abi: SBT_ABI,
@@ -141,6 +140,18 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
       console.error(`Failed to fetch media URI from contract ${contractAddr}:`, error)
       return ''
     }
+  }
+
+  // Helper function to fetch and validate media URI
+  const fetchAndValidateMediaURI = async (contractAddr: string, errorSetter: (error: string) => void): Promise<string | null> => {
+    const mediaUri = await fetchMediaURIFromContract(contractAddr)
+    
+    if (!mediaUri) {
+      errorSetter('Failed to fetch media URI from contract')
+      return null
+    }
+    
+    return mediaUri
   }
 
   // Helper function to wait for transaction and log the mint
@@ -302,11 +313,10 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
     resetWriteContract() // Reset previous transaction state
     
     try {
-      // Fetch media URI from contract to ensure we have the latest value
-      const currentMediaURI = await fetchMediaURIFromContract(contractAddress)
+      // Fetch and validate media URI from contract
+      const currentMediaURI = await fetchAndValidateMediaURI(contractAddress, setError)
       
       if (!currentMediaURI) {
-        setError('Failed to fetch media URI from contract')
         setLoading(false)
         return
       }
@@ -437,8 +447,20 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
     }))
 
     try {
-      // Fetch media URI from the tier contract
-      const tierMediaURI = await fetchMediaURIFromContract(tierRoleConfig.contractAddress)
+      // Fetch and validate media URI from tier contract
+      const tierMediaURI = await fetchAndValidateMediaURI(
+        tierRoleConfig.contractAddress,
+        (error) => {
+          setLowerTierMintStates(prev => ({
+            ...prev,
+            [tierName]: { status: 'unminted', error }
+          }))
+        }
+      )
+      
+      if (!tierMediaURI) {
+        return
+      }
       
       // Get the signature
       const response = await fetch('/api/nft/generate-mint-signature', {
@@ -521,6 +543,9 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
     }
   }
 
+  // Computed variables for better readability
+  const isMintButtonDisabled = isMinted || loading || !address || !!pendingTxHash || isLoadingMediaURI
+
   return(
     <div className={isMainPage ? 'card-cyber p-6 mt-8' : ''}>
       {isMainPage && (
@@ -553,7 +578,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
           <div className="flex gap-3 mt-5">
             <button
               onClick={handleMint}
-              disabled={isMinted || loading || !address || !!pendingTxHash || isLoadingMediaURI}
+              disabled={isMintButtonDisabled}
               className="btn-cyber w-full"
             >
               {isLoadingMediaURI ? 'Loading media...' : loading ? 'Minting...' : pendingTxHash ? 'Minting...' : isMinted ? 'Minted, see you next month!' : 'Mint your SBT (Freemint)'}
