@@ -1,3 +1,21 @@
+// Map STORAGE1_* prefixed environment variables to standard KV names
+// This must happen BEFORE importing @vercel/kv to ensure the library finds the credentials
+if (process.env.STORAGE1_KV_REST_API_URL && !process.env.KV_REST_API_URL) {
+  process.env.KV_REST_API_URL = process.env.STORAGE1_KV_REST_API_URL
+}
+if (process.env.STORAGE1_KV_REST_API_TOKEN && !process.env.KV_REST_API_TOKEN) {
+  process.env.KV_REST_API_TOKEN = process.env.STORAGE1_KV_REST_API_TOKEN
+}
+if (process.env.STORAGE1_KV_REST_API_READ_ONLY_TOKEN && !process.env.KV_REST_API_READ_ONLY_TOKEN) {
+  process.env.KV_REST_API_READ_ONLY_TOKEN = process.env.STORAGE1_KV_REST_API_READ_ONLY_TOKEN
+}
+if (process.env.STORAGE1_KV_URL && !process.env.KV_URL) {
+  process.env.KV_URL = process.env.STORAGE1_KV_URL
+}
+if (process.env.STORAGE1_REDIS_URL && !process.env.REDIS_URL) {
+  process.env.REDIS_URL = process.env.STORAGE1_REDIS_URL
+}
+
 import { kv } from '@vercel/kv'
 
 // Helper function to provide better error messages when KV is not configured
