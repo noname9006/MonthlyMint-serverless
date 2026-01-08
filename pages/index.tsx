@@ -87,6 +87,16 @@ export default function Home() {
     const handleMessage = (event: MessageEvent<DiscordAuthMessage>) => {
       if (!event.data || event.data.source !== 'discord-auth') return
 
+      // Clear timeout and interval since auth completed
+      if ((window as any).__discordPopupTimeout) {
+        clearTimeout((window as any).__discordPopupTimeout)
+        ;(window as any).__discordPopupTimeout = null
+      }
+      if ((window as any).__discordPopupCheckInterval) {
+        clearInterval((window as any).__discordPopupCheckInterval)
+        ;(window as any).__discordPopupCheckInterval = null
+      }
+
       if (event.data.status === 'success') {
         setDiscordUser(event.data.user)
         setGuildMember(event.data.member)
@@ -166,10 +176,55 @@ export default function Home() {
     if (!popup) {
       setDiscordLoading(false)
       setDiscordError('Разрешите всплывающие окна, чтобы авторизоваться через Discord')
+      return
     }
+
+    // Set timeout to reset loading state after 60 seconds
+    const timeoutId = setTimeout(() => {
+      if (popup && !popup.closed) {
+        popup.close()
+      }
+      setDiscordLoading(false)
+      setDiscordError('Discord authentication timed out. Please try again.')
+    }, 60000)
+
+    // Check if popup was closed manually
+    const checkPopupClosed = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(checkPopupClosed)
+        clearTimeout(timeoutId)
+        // Only reset loading if Discord auth hasn't completed
+        // (if auth completed, handleMessage will have already set loading to false)
+        setTimeout(() => {
+          setDiscordLoading(prev => {
+            // Only reset if still loading (auth didn't complete)
+            if (prev) {
+              setDiscordError('Discord authentication was cancelled. Please try again.')
+              return false
+            }
+            return prev
+          })
+        }, 100)
+      }
+    }, 500)
+
+    // Store interval ID to clean up when auth completes
+    // We'll clear it in the message handler
+    ;(window as any).__discordPopupCheckInterval = checkPopupClosed
+    ;(window as any).__discordPopupTimeout = timeoutId
   }
 
   const handleDiscordLogout = () => {
+    // Clear any active timers from Discord popup
+    if ((window as any).__discordPopupTimeout) {
+      clearTimeout((window as any).__discordPopupTimeout)
+      ;(window as any).__discordPopupTimeout = null
+    }
+    if ((window as any).__discordPopupCheckInterval) {
+      clearInterval((window as any).__discordPopupCheckInterval)
+      ;(window as any).__discordPopupCheckInterval = null
+    }
+
     // Disconnect wallet first if connected
     if (isConnected) {
       disconnect()
@@ -180,6 +235,7 @@ export default function Home() {
     setGuildMember(null)
     setHighestRole(null)
     setDiscordError(null)
+    setDiscordLoading(false)
     
     // Clear any persisted state
     localStorage.removeItem('discord_user')
