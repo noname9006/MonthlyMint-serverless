@@ -43,7 +43,9 @@ A Next.js web application that enables Discord-gated NFT minting on the Botanix 
    
    The application requires Neon Postgres for data storage.
 
-   **Steps to create a Neon database:**
+   **📖 See the complete setup guide: [NEON_SETUP.md](NEON_SETUP.md)**
+
+   **Quick steps:**
    ```bash
    # 1. Go to https://neon.tech and sign up (free tier available)
    
@@ -53,9 +55,8 @@ A Next.js web application that enables Discord-gated NFT minting on the Botanix 
    #    - Click "Create project"
    
    # 3. Copy the connection string:
-   #    - On the project dashboard, you'll see a connection string
-   #    - It looks like: postgresql://[user]:[password]@[host]/[database]?sslmode=require
-   #    - Copy this entire string
+   #    - Select "Pooled connection" from the dashboard
+   #    - Copy the full connection string
    
    # 4. Add to your .env.local file:
    cp .env.example .env.local
