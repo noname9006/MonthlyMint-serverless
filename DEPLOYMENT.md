@@ -4,23 +4,27 @@ This guide explains how to deploy the Monthly Mint application to Vercel's serve
 
 ## Overview
 
-The application has been optimized for Vercel deployment with the following changes:
-- **Serverless-compatible database**: Uses Vercel KV (Redis) instead of SQLite
+## Overview
+
+The application has been optimized for Vercel deployment with the following features:
+- **Serverless-compatible database**: Uses Neon Postgres (serverless SQL database)
 - **Optimized file handling**: File uploads use memory-based parsing
-- **No filesystem dependencies**: All data is stored in Vercel KV
+- **SQL-based data storage**: All data is stored in Neon Postgres with proper relational structure
 - **Auto-scaling**: Serverless functions scale automatically
+- **Discord-Wallet linking**: Tracks connections between Discord accounts, wallet addresses, and minted NFTs
 
 ## Prerequisites
 
 1. **Vercel Account**: Sign up at [vercel.com](https://vercel.com/signup)
-2. **GitHub Account**: Your code should be in a GitHub repository
-3. **Discord Application**: 
+2. **Neon Account**: Sign up at [neon.tech](https://neon.tech) (free tier available)
+3. **GitHub Account**: Your code should be in a GitHub repository
+4. **Discord Application**: 
    - Create at [Discord Developer Portal](https://discord.com/developers/applications)
    - Note your Client ID and Client Secret
-4. **WalletConnect Project**: 
+5. **WalletConnect Project**: 
    - Get a project ID at [WalletConnect Cloud](https://cloud.walletconnect.com/)
-5. **Smart Contracts**: Deploy 6 SBT contracts (one per role) on Botanix network
-6. **Backend Wallet**: A private key for signing mint approvals
+6. **Smart Contracts**: Deploy 6 SBT contracts (one per role) on Botanix network
+7. **Backend Wallet**: A private key for signing mint approvals
 
 ## Step-by-Step Deployment
 
@@ -42,27 +46,35 @@ git push origin main
 4. Select your GitHub repository
 5. Vercel will auto-detect Next.js - click **"Continue"**
 
-### 3. Create Vercel KV Database
+### 3. Create Neon Postgres Database
 
 **IMPORTANT**: Do this BEFORE configuring environment variables!
 
-1. In your new Vercel project, go to the **"Storage"** tab
-2. Click **"Create Database"**
-3. Select **"KV"** (Redis-compatible key-value store)
-4. Choose a name (e.g., `monthly-mint-kv`)
-5. Select the same region as your project for best performance
-6. Click **"Create"**
+1. Go to [Neon Console](https://console.neon.tech)
+2. Click **"Create a project"**
+3. Choose a project name (e.g., `monthly-mint-db`)
+4. Select a region (choose closest to your Vercel deployment region for best performance)
+5. Click **"Create project"**
+6. On the project dashboard, you'll see a connection string that looks like:
+   ```
+   postgresql://[user]:[password]@[host]/[database]?sslmode=require
+   ```
+7. **Copy this entire connection string** - you'll need it for the next step
 
-Vercel will automatically set these environment variables:
-- `KV_REST_API_URL`
-- `KV_REST_API_TOKEN`
-- `KV_URL`
+The database tables will be created automatically when the application first runs.
 
 ### 4. Configure Environment Variables
 
 In your Vercel project settings, go to **"Settings" → "Environment Variables"**
 
 Add the following variables for **Production**, **Preview**, and **Development**:
+
+#### Database Configuration
+```
+DATABASE_URL=postgresql://[user]:[password]@[host]/[database]?sslmode=require
+```
+
+⚠️ **Important**: Paste the full connection string you copied from Neon!
 
 #### Discord Configuration
 ```

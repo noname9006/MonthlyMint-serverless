@@ -2,9 +2,9 @@
 
 A Next.js web application that enables Discord-gated NFT minting on the Botanix network. Users must verify their Discord membership and roles before connecting their wallet to mint Soulbound Tokens (SBTs) with IPFS-stored media.
 
-**✨ Optimized for Vercel serverless deployment with Vercel KV (Redis) storage.**
+**✨ Optimized for Vercel serverless deployment with Neon Postgres database.**
 
-> **⚠️ IMPORTANT:** This application **requires** Vercel KV (Redis) for data storage. You must create a Vercel KV database and configure the environment variables before running the application. See [Quick Start](#quick-start-local-development) for setup instructions.
+> **⚠️ IMPORTANT:** This application **requires** a Neon Postgres database for data storage. You must create a Neon database and configure the DATABASE_URL environment variable before running the application. See [Quick Start](#quick-start-local-development) for setup instructions.
 
 ## Features
 
@@ -16,14 +16,15 @@ A Next.js web application that enables Discord-gated NFT minting on the Botanix 
 - **Soulbound Token (SBT) Minting** - Non-transferable NFTs with metadata
 - **IPFS Media Upload** - Decentralized storage for NFT images
 - **Signature-Based Minting** - Backend-signed transactions for security
-- **Serverless Architecture** - Runs on Vercel with Vercel KV for data persistence
+- **Serverless Architecture** - Runs on Vercel with Neon Postgres for data persistence
+- **Discord-Wallet Connections** - Link Discord accounts to wallet addresses and track minted NFTs
 
 ## Quick Start (Local Development)
 
 ### Prerequisites
 - Node.js 18+ installed
-- A Vercel account (free tier works fine)
-- **REQUIRED:** Vercel KV database (see setup instructions below)
+- A Neon account (free tier available)
+- **REQUIRED:** Neon Postgres database (see setup instructions below)
 
 ### Setup Instructions
 
@@ -38,40 +39,28 @@ A Next.js web application that enables Discord-gated NFT minting on the Botanix 
    npm install
    ```
 
-3. **Set up Vercel KV (REQUIRED)**
+3. **Set up Neon Postgres Database (REQUIRED)**
    
-   The application requires Vercel KV for data storage. You have two options:
+   The application requires Neon Postgres for data storage.
 
-   **Option A: Use Vercel CLI (Recommended)**
-   ```bash
-   # Install Vercel CLI
-   npm i -g vercel
-   
-   # Link to your Vercel project (create one if needed at vercel.com)
-   vercel link
-   
-   # Create a KV database in your Vercel project:
-   # - Go to https://vercel.com/dashboard
-   # - Select your project → Storage tab
-   # - Click "Create Database" → Select "KV"
-   
-   # Pull environment variables (includes KV credentials)
-   vercel env pull .env.local
-   ```
+   **📖 See the complete setup guide: [NEON_SETUP.md](NEON_SETUP.md)**
 
-   **Option B: Manual Setup**
+   **Quick steps:**
    ```bash
-   # 1. Copy the example environment file
+   # 1. Go to https://neon.tech and sign up (free tier available)
+   
+   # 2. Create a new project:
+   #    - Click "Create a project"
+   #    - Choose a name and region
+   #    - Click "Create project"
+   
+   # 3. Copy the connection string:
+   #    - Select "Pooled connection" from the dashboard
+   #    - Copy the full connection string
+   
+   # 4. Add to your .env.local file:
    cp .env.example .env.local
-   
-   # 2. Get KV credentials from Vercel:
-   #    - Go to https://vercel.com/dashboard
-   #    - Select your project → Storage → Your KV database
-   #    - Click ".env.local" tab
-   #    - Copy KV_REST_API_URL and KV_REST_API_TOKEN values
-   
-   # 3. Edit .env.local and paste the KV credentials
-   # 4. Fill in other required environment variables (Discord, WalletConnect, etc.)
+   # Edit .env.local and paste the connection string as DATABASE_URL
    ```
 
 4. **Configure environment variables in `.env.local`**
@@ -92,13 +81,14 @@ A Next.js web application that enables Discord-gated NFT minting on the Botanix 
 
 ## Vercel Deployment
 
-This application is optimized for deployment on Vercel's serverless infrastructure.
+This application is optimized for deployment on Vercel's serverless infrastructure with Neon Postgres.
 
 ### Prerequisites
 
 1. A [Vercel account](https://vercel.com/signup)
-2. A Discord application (create at [Discord Developer Portal](https://discord.com/developers/applications))
-3. A WalletConnect project ID (get at [WalletConnect Cloud](https://cloud.walletconnect.com/))
+2. A [Neon account](https://neon.tech) (free tier available)
+3. A Discord application (create at [Discord Developer Portal](https://discord.com/developers/applications))
+4. A WalletConnect project ID (get at [WalletConnect Cloud](https://cloud.walletconnect.com/))
 
 ### Deployment Steps
 
@@ -110,18 +100,19 @@ This application is optimized for deployment on Vercel's serverless infrastructu
    - Import your repository
    - Vercel will auto-detect Next.js
 
-3. **Create a Vercel KV Database:**
-   - In your Vercel project dashboard, go to the "Storage" tab
-   - Click "Create Database"
-   - Select "KV" (Redis-compatible key-value store)
-   - Choose a name for your database
-   - Click "Create"
-   - Vercel will automatically set `KV_REST_API_URL` and `KV_REST_API_TOKEN` environment variables
+3. **Create a Neon Postgres Database:**
+   - Go to [Neon Console](https://console.neon.tech)
+   - Click "Create a project"
+   - Choose a project name and region (choose closest to your users)
+   - Click "Create project"
+   - Copy the connection string from the dashboard
+   - The connection string will look like: `postgresql://[user]:[password]@[host]/[database]?sslmode=require`
 
 4. **Configure Environment Variables:**
    - In your Vercel project settings, go to "Settings" → "Environment Variables"
    - Add all required environment variables from `.env.example`:
      ```
+     DATABASE_URL (your Neon Postgres connection string)
      DISCORD_CLIENT_ID
      DISCORD_CLIENT_SECRET
      DISCORD_REDIRECT_URI (use your Vercel URL: https://your-app.vercel.app/api/auth/discord/callback)
@@ -136,7 +127,6 @@ This application is optimized for deployment on Vercel's serverless infrastructu
      NEXT_PUBLIC_SPROUT_CONTRACT_ADDRESS
      BACKEND_PRIVATE_KEY
      ```
-   - Note: KV_REST_API_URL and KV_REST_API_TOKEN are automatically set when you link the KV database
 
 5. **Update Discord OAuth Redirect URI:**
    - Go to [Discord Developer Portal](https://discord.com/developers/applications)
@@ -149,42 +139,27 @@ This application is optimized for deployment on Vercel's serverless infrastructu
    - Vercel will build and deploy your application
    - Your app will be available at `https://your-app.vercel.app`
 
-### Local Development with Vercel KV
+### Local Development with Neon
 
-To test with Vercel KV locally:
+To test with Neon locally:
 
-1. Install Vercel CLI: `npm i -g vercel`
-2. Link your project: `vercel link`
-3. Pull environment variables: `vercel env pull .env.local`
+1. Create a Neon project at [neon.tech](https://neon.tech)
+2. Copy the connection string
+3. Add to `.env.local`: `DATABASE_URL=your_connection_string`
 4. Run development server: `npm run dev`
 
-The `.env.local` file will now contain your KV credentials for local testing.
+The database tables will be created automatically on first run.
 
 ## Environment Variables
 
 All environment variables must be configured in `.env.local` (copy from `.env.example`):
 
-### Vercel KV Configuration (REQUIRED)
+### Neon Database Configuration (REQUIRED)
 ```env
-# These are REQUIRED for the application to work
-# Automatically set by Vercel when you create and link a KV database
-# For local development, get these from your Vercel project:
-#   1. Go to https://vercel.com/dashboard
-#   2. Select your project → Storage tab
-#   3. Create a KV database if you haven't already
-#   4. Click on your KV database → .env.local tab
-#   5. Copy the values below
-KV_REST_API_URL=your_kv_rest_api_url_here
-KV_REST_API_TOKEN=your_kv_rest_api_token_here
-
-# Alternative: If your storage provider uses STORAGE1_* prefixed variables,
-# you can use them directly without renaming. Simply copy and paste:
-# STORAGE1_KV_REST_API_URL=
-# STORAGE1_KV_REST_API_TOKEN=
-# STORAGE1_KV_REST_API_READ_ONLY_TOKEN=
-# STORAGE1_KV_URL=
-# STORAGE1_REDIS_URL=
-# The application will automatically map these to the standard KV_* names.
+# This is REQUIRED for the application to work
+# Get this from your Neon project dashboard at https://neon.tech
+# Connection string format: postgresql://[user]:[password]@[host]/[database]?sslmode=require
+DATABASE_URL=your_neon_database_connection_string_here
 ```
 
 ### Discord OAuth2 Configuration
@@ -389,20 +364,27 @@ For detailed instructions, see [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## Architecture Notes
 
-### Database: Vercel KV (Redis)
+### Database: Neon Postgres
 
-This application uses **Vercel KV** for data persistence instead of SQLite:
+This application uses **Neon Postgres** for data persistence:
 
 - **Serverless-compatible**: Works perfectly with Vercel's edge functions
-- **Fast**: Redis-based storage with sub-50ms queries
-- **Scalable**: Handles concurrent requests efficiently
+- **Fast**: Serverless Postgres with auto-scaling and connection pooling
+- **SQL-based**: Familiar SQL syntax, similar to SQLite but serverless
 - **Managed**: No database maintenance required
+- **Scalable**: Handles concurrent requests efficiently
 
-**Data stored in KV:**
+**Data stored in Neon:**
 - User profiles (Discord ID, username, metadata)
 - Discord authentication logs
-- Wallet connection records
-- NFT mint events and history
+- Wallet connection records (Discord accounts linked to wallet addresses)
+- NFT mint events and history (tracking which Discord users minted which NFTs)
+
+**Schema highlights:**
+- `users` - Discord user information
+- `discord_wallet_connections` - Links Discord accounts to EVM wallet addresses
+- `sbt_mint_events` - Records all NFT mints with Discord ID, wallet address, contract, and metadata
+- Full relational database with foreign keys and indexes for optimal performance
 
 ### File Uploads
 
@@ -411,48 +393,38 @@ File uploads are handled in-memory for serverless compatibility:
 - Files are validated before IPFS upload
 - No local filesystem dependencies
 
-## Differences from SQLite Version
+## Differences from Redis/KV Version
 
-If you're familiar with the SQLite version:
+If you're familiar with the Vercel KV (Redis) version:
 
-1. **Database layer is async**: All database functions return Promises
-2. **No init-db script needed**: Database is created automatically
-3. **Different data structure**: Redis uses key-value pairs instead of SQL tables
-4. **No filesystem storage**: Everything is in Vercel KV or IPFS
+1. **Database uses SQL**: Standard SQL queries instead of Redis commands
+2. **Relational structure**: Proper tables with foreign keys instead of key-value pairs
+3. **Automatic schema creation**: Database tables are created automatically on first run
+4. **Better for complex queries**: Easier to query relationships between Discord accounts, wallets, and NFTs
+5. **PostgreSQL features**: Full support for transactions, constraints, and indexes
 
 The API interface remains the same - only the storage backend has changed.
 
 ## Troubleshooting
 
-### Error: "Missing required environment variables KV_REST_API_URL and KV_REST_API_TOKEN"
+### Error: "DATABASE_URL environment variable is not set"
 
-This error occurs when trying to use the application without Vercel KV configured. To fix:
+This error occurs when trying to use the application without a Neon database configured. To fix:
 
 **For Local Development:**
-1. Create a Vercel account at [vercel.com](https://vercel.com/signup)
-2. Create a new project or link to an existing one
-3. Go to your project → Storage tab
-4. Click "Create Database" → Select "KV"
-5. Get the credentials using one of these methods:
-
-   **Option A: Vercel CLI (Easiest)**
-   ```bash
-   npm i -g vercel
-   vercel link
-   vercel env pull .env.local
+1. Create a Neon account at [neon.tech](https://neon.tech)
+2. Create a new project
+3. Copy the connection string from the dashboard
+4. Add it to your `.env.local` file:
+   ```env
+   DATABASE_URL=postgresql://[user]:[password]@[host]/[database]?sslmode=require
    ```
-
-   **Option B: Manual**
-   - Go to Storage → Your KV database → .env.local tab
-   - Copy `KV_REST_API_URL` and `KV_REST_API_TOKEN`
-   - Add them to your `.env.local` file
 
 **For Vercel Deployment:**
 1. Go to your Vercel project dashboard
-2. Navigate to Storage tab
-3. Click "Create Database" → Select "KV"
-4. The environment variables will be set automatically
-5. Redeploy your application
+2. Navigate to Settings → Environment Variables
+3. Add `DATABASE_URL` with your Neon connection string
+4. Redeploy your application
 
 ### Discord Authentication Fails
 

@@ -39,7 +39,10 @@ next-env.d.ts
 /lib/*.js
 /scripts/*.js
 
-# Old SQLite database files (no longer used with Vercel KV)
+# Database backup files
+*.backup
+
+# Old database implementations (no longer used)
 data/
 *.db
 *.db-journal
