@@ -154,18 +154,20 @@ export default async function handler(
     // Get all keys from KV database
     const keys = await kv.keys('*')
     
-    // Fetch values for all keys
+    // Fetch values for all keys concurrently
     const data: Record<string, unknown> = {}
     
-    for (const key of keys) {
-      data[key] = await fetchValueByType(key)
-    }
+    await Promise.all(
+      keys.map(async (key) => {
+        data[key] = await fetchValueByType(key)
+      })
+    )
     
     // Build response
     const response: BrowseResponse = {
       totalKeys: keys.length,
-      keys: keys,
-      data: data,
+      keys,
+      data,
       timestamp: new Date().toISOString()
     }
     
