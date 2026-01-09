@@ -104,16 +104,24 @@ export async function initDatabase(): Promise<void> {
     await sql`CREATE INDEX IF NOT EXISTS idx_sbt_mint_events_wallet ON sbt_mint_events(wallet_address)`
     await sql`CREATE INDEX IF NOT EXISTS idx_sbt_mint_events_contract ON sbt_mint_events(contract_address)`
 
-    console.log('Database schema initialized successfully')
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Database schema initialized successfully')
+    }
   } catch (error) {
     console.error('Error initializing database:', error)
     throw error
   }
 }
 
-// Auto-initialize on first import (in development)
-if (process.env.NODE_ENV !== 'production') {
-  initDatabase().catch(console.error)
+// Lazy initialization flag
+let isSchemaInitialized = false
+
+// Helper function to ensure schema is initialized before operations
+async function ensureSchema(): Promise<void> {
+  if (!isSchemaInitialized) {
+    await initDatabase()
+    isSchemaInitialized = true
+  }
 }
 
 // User Management Functions
@@ -128,6 +136,7 @@ export interface User {
 }
 
 export async function getUserByDiscordId(discordId: string): Promise<User | null> {
+  await ensureSchema()
   const result = await sql`
     SELECT * FROM users WHERE discord_id = ${discordId}
   `
@@ -135,6 +144,7 @@ export async function getUserByDiscordId(discordId: string): Promise<User | null
 }
 
 export async function createUser(discordId: string, username?: string, globalName?: string): Promise<User> {
+  await ensureSchema()
   const result = await sql`
     INSERT INTO users (discord_id, discord_username, discord_global_name)
     VALUES (${discordId}, ${username || null}, ${globalName || null})
@@ -188,6 +198,7 @@ export interface DiscordAuthLog {
 }
 
 export async function logDiscordAuth(log: DiscordAuthLog): Promise<void> {
+  await ensureSchema()
   await sql`
     INSERT INTO discord_auth_logs (discord_id, user_id, action, success, error_message, ip_address, user_agent)
     VALUES (
@@ -216,6 +227,7 @@ export interface WalletConnectLog {
 }
 
 export async function logWalletConnect(log: WalletConnectLog): Promise<void> {
+  await ensureSchema()
   await sql`
     INSERT INTO wallet_connect_logs (discord_id, user_id, wallet_address, action, success, error_message, ip_address, user_agent)
     VALUES (
@@ -323,6 +335,7 @@ type LogSbtMintResult =
 
 export async function logSbtMint(event: SbtMintEvent): Promise<LogSbtMintResult> {
   try {
+    await ensureSchema()
     // Check if transaction already logged (idempotency)
     const existing = await sql`
       SELECT id FROM sbt_mint_events WHERE transaction_hash = ${event.transaction_hash}
