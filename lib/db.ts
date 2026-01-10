@@ -154,6 +154,7 @@ export async function createUser(discordId: string, username?: string, globalNam
 }
 
 export async function updateUser(discordId: string, username?: string, globalName?: string): Promise<void> {
+  await ensureSchema()
   await sql`
     UPDATE users
     SET discord_username = ${username || null},
@@ -256,6 +257,7 @@ export interface DiscordWalletConnection {
 }
 
 export async function createDiscordWalletConnection(discordId: string, userId: number, evmAddress: string): Promise<void> {
+  await ensureSchema()
   const normalizedAddress = evmAddress.toLowerCase()
   
   // Check if connection exists
@@ -284,6 +286,7 @@ export async function createDiscordWalletConnection(discordId: string, userId: n
 }
 
 export async function deactivateDiscordWalletConnection(discordId: string, evmAddress: string): Promise<void> {
+  await ensureSchema()
   const normalizedAddress = evmAddress.toLowerCase()
   await sql`
     UPDATE discord_wallet_connections
@@ -294,6 +297,7 @@ export async function deactivateDiscordWalletConnection(discordId: string, evmAd
 }
 
 export async function getActiveWalletConnections(discordId: string): Promise<DiscordWalletConnection[]> {
+  await ensureSchema()
   const result = await sql`
     SELECT * FROM discord_wallet_connections
     WHERE discord_id = ${discordId} AND is_active = TRUE
@@ -302,6 +306,7 @@ export async function getActiveWalletConnections(discordId: string): Promise<Dis
 }
 
 export async function getActiveWalletConnectionByAddress(discordId: string, evmAddress: string): Promise<DiscordWalletConnection | null> {
+  await ensureSchema()
   const normalizedAddress = evmAddress.toLowerCase()
   const result = await sql`
     SELECT * FROM discord_wallet_connections
@@ -378,6 +383,7 @@ export async function logSbtMint(event: SbtMintEvent): Promise<LogSbtMintResult>
 
 // Get total mints for a Discord user
 export async function getUserMintCount(discordId: string): Promise<number> {
+  await ensureSchema()
   const result = await sql`
     SELECT COUNT(*) as count FROM sbt_mint_events WHERE discord_id = ${discordId}
   `
@@ -386,6 +392,7 @@ export async function getUserMintCount(discordId: string): Promise<number> {
 
 // Get all mints for a Discord user
 export async function getUserMints(discordId: string): Promise<SbtMintEvent[]> {
+  await ensureSchema()
   const result = await sql`
     SELECT * FROM sbt_mint_events 
     WHERE discord_id = ${discordId} 
@@ -396,6 +403,7 @@ export async function getUserMints(discordId: string): Promise<SbtMintEvent[]> {
 
 // Check if user already minted for specific role
 export async function hasUserMintedForRole(discordId: string, roleName: string): Promise<boolean> {
+  await ensureSchema()
   const result = await sql`
     SELECT COUNT(*) as count FROM sbt_mint_events 
     WHERE discord_id = ${discordId} AND role_name = ${roleName}
@@ -405,6 +413,7 @@ export async function hasUserMintedForRole(discordId: string, roleName: string):
 
 // Check if user already minted for specific contract
 export async function hasUserMintedForContract(discordId: string, contractAddress: string): Promise<boolean> {
+  await ensureSchema()
   const result = await sql`
     SELECT COUNT(*) as count FROM sbt_mint_events 
     WHERE discord_id = ${discordId} AND contract_address = ${contractAddress.toLowerCase()}
@@ -414,6 +423,7 @@ export async function hasUserMintedForContract(discordId: string, contractAddres
 
 // Get mint by transaction hash
 export async function getMintByTxHash(txHash: string): Promise<SbtMintEvent | null> {
+  await ensureSchema()
   const result = await sql`
     SELECT * FROM sbt_mint_events WHERE transaction_hash = ${txHash}
   `
