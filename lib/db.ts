@@ -319,7 +319,7 @@ export async function getActiveWalletConnectionByAddress(discordId: string, evmA
   return result.length > 0 ? (result[0] as DiscordWalletConnection) : null
 }
 
-// SBT Mint Event Tracking
+// NFT Mint Event Tracking
 
 export interface SbtMintEvent {
   id?: number

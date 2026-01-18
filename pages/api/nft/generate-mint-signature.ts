@@ -125,7 +125,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (await hasUserMintedForRole(discordId, roleName)) {
       console.log(`User ${discordId} already minted for role: ${roleName}`)
       return res.status(403).json({ 
-        error: 'You have already minted an SBT for this role',
+        error: 'You have already minted an NFT for this role',
         code: 'ALREADY_MINTED_ROLE'
       })
     }
@@ -134,7 +134,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (await hasUserMintedForContract(discordId, contractAddress)) {
       console.log(`User ${discordId} already minted from contract: ${contractAddress}`)
       return res.status(403).json({ 
-        error: 'You have already minted an SBT from this contract',
+        error: 'You have already minted an NFT from this contract',
         code: 'ALREADY_MINTED_CONTRACT'
       })
     }
@@ -144,7 +144,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (totalMints >= MAX_MINTS_PER_USER) {
       console.log(`User ${discordId} exceeded max mints: ${totalMints}/${MAX_MINTS_PER_USER}`)
       return res.status(403).json({ 
-        error: `You have reached the maximum number of SBT mints (${MAX_MINTS_PER_USER})`,
+        error: `You have reached the maximum number of NFT mints (${MAX_MINTS_PER_USER})`,
         code: 'MAX_MINTS_EXCEEDED'
       })
     }
