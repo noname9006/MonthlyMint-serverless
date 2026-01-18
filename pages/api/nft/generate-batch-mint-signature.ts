@@ -112,15 +112,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Generate signatures for each mint request
-    const signatures = []
-    const requestIds = []
-    const metadatas = []
-    const mediaURIs = []
-    const credentialTypes = []
-    const issuerNames = []
-    const levelNames = []
-    const monthNames = []
-    const years = []
+    const signatures: string[] = []
+    const requestIds: string[] = []
+    const metadatas: string[] = []
+    const mediaURIs: string[] = []
+    const credentialTypes: string[] = []
+    const issuerNames: string[] = []
+    const levelNames: string[] = []
+    const monthNames: string[] = []
+    const years: number[] = []
 
     for (let i = 0; i < mintRequests.length; i++) {
       const request = mintRequests[i]
