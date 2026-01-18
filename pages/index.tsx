@@ -263,7 +263,7 @@ export default function Home() {
           <div className="flex items-start justify-between gap-4 flex-wrap pb-6">
             <div>
               <p className="text-sm font-bold uppercase tracking-widest text-accent mb-2">Botanix • Ambassador Program</p>
-              <p className="text-text-secondary">Verify Discord and connect wallet to mint your SBT</p>
+              <p className="text-text-secondary">Verify Discord and connect wallet to mint your NFT</p>
             </div>
           </div>
           

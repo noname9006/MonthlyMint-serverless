@@ -17,7 +17,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       credentialType,
       metadata,
       mediaUri,
-      level,
+      levelName,
+      monthName,
+      year,
+      requestId,
     } = req.body
 
     // Validate required fields
@@ -55,7 +58,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       credential_type: credentialType,
       metadata: metadata,
       media_uri: mediaUri,
-      level: level,
+      level_name: levelName,
+      month_name: monthName,
+      year: year,
+      request_id: requestId,
     })
 
     if (!result.success) {

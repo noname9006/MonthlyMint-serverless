@@ -1,6 +1,6 @@
 # Monthly Mint - Discord Gated NFT Minting
 
-A Next.js web application that enables Discord-gated NFT minting on the Botanix network. Users must verify their Discord membership and roles before connecting their wallet to mint Soulbound Tokens (SBTs) with IPFS-stored media.
+A Next.js web application that enables Discord-gated NFT minting on the Botanix network. Users must verify their Discord membership and roles before connecting their wallet to mint NFTs (ERC721 Transferable Tokens) with customizable media links.
 
 **✨ Optimized for Vercel serverless deployment with Neon Postgres database.**
 
@@ -13,9 +13,12 @@ A Next.js web application that enables Discord-gated NFT minting on the Botanix 
 - **Role-Based Access** - Discord roles determine minting eligibility
 - **Wallet Connection** - RainbowKit integration for seamless wallet connect
 - **Botanix Network** - Native support for Botanix blockchain
-- **Soulbound Token (SBT) Minting** - Non-transferable NFTs with metadata
-- **IPFS Media Upload** - Decentralized storage for NFT images
-- **Signature-Based Minting** - Backend-signed transactions for security
+- **NFT (ERC721 Transferable Token) Minting** - Transferable NFTs with metadata
+- **Single Unified Contract** - One contract for all roles and levels
+- **Environment-Based Media** - Media URIs configured via environment variables for each level/year/month
+- **EIP-712 Signature Standard** - Secure backend-signed transactions using typed structured data
+- **Batch Minting Support** - Mint multiple NFTs in a single transaction
+- **Admin-Managed Minting** - Current month controlled via admin endpoint
 - **Serverless Architecture** - Runs on Vercel with Neon Postgres for data persistence
 - **Discord-Wallet Connections** - Link Discord accounts to wallet addresses and track minted NFTs
 
@@ -119,13 +122,10 @@ This application is optimized for deployment on Vercel's serverless infrastructu
      NEXT_PUBLIC_DISCORD_CLIENT_ID
      NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID
      NEXT_PUBLIC_NETWORK_ID
-     NEXT_PUBLIC_BOTANIST_CONTRACT_ADDRESS
-     NEXT_PUBLIC_HYPERION_CONTRACT_ADDRESS
-     NEXT_PUBLIC_SEQUOIA_CONTRACT_ADDRESS
-     NEXT_PUBLIC_BLOSSOM_CONTRACT_ADDRESS
-     NEXT_PUBLIC_SEEDLING_CONTRACT_ADDRESS
-     NEXT_PUBLIC_SPROUT_CONTRACT_ADDRESS
+     NEXT_PUBLIC_NFT_CONTRACT_ADDRESS (single unified contract)
+     ADMIN_SECRET (for managing current month)
      BACKEND_PRIVATE_KEY
+     Media URI environment variables (e.g., NEXT_PUBLIC_BOTANIST_2025_JAN)
      ```
 
 5. **Update Discord OAuth Redirect URI:**
@@ -218,47 +218,54 @@ NEXT_PUBLIC_NETWORK_ID=3637
 
 > **Note:** Environment variables prefixed with `NEXT_PUBLIC_` are embedded at build time in Next.js. Simply changing the `.env.local` file is not enough - you must restart the dev server or rebuild the application for the changes to be applied.
 
-### NFT Contract Addresses (One per Discord Role)
+### NFT Contract Address (Single Unified Contract)
 ```env
-# Botanist role contract (highest tier)
-NEXT_PUBLIC_BOTANIST_CONTRACT_ADDRESS=your_botanist_contract_address_here
+# Single NFT contract address for all roles and levels
+NEXT_PUBLIC_NFT_CONTRACT_ADDRESS=your_nft_contract_address_here
+```
 
-# Hyperion Ambassador role contract
-NEXT_PUBLIC_HYPERION_CONTRACT_ADDRESS=your_hyperion_contract_address_here
-
-# Sequoia Ambassador role contract
-NEXT_PUBLIC_SEQUOIA_CONTRACT_ADDRESS=your_sequoia_contract_address_here
-
-# Blossom Ambassador role contract
-NEXT_PUBLIC_BLOSSOM_CONTRACT_ADDRESS=your_blossom_contract_address_here
-
-# Seedling Ambassador role contract
-NEXT_PUBLIC_SEEDLING_CONTRACT_ADDRESS=your_seedling_contract_address_here
-
-# Sprout role contract (entry tier)
-NEXT_PUBLIC_SPROUT_CONTRACT_ADDRESS=your_sprout_contract_address_here
+### NFT Media Configuration
+Media URIs are configured via environment variables for each level/year/month combination:
+```env
+# Format: NEXT_PUBLIC_{LEVEL}_{YEAR}_{MONTH}
+# Examples:
+NEXT_PUBLIC_BOTANIST_2025_JAN=ipfs://your_botanist_january_2025_media_uri
+NEXT_PUBLIC_BOTANIST_2025_FEB=ipfs://your_botanist_february_2025_media_uri
+NEXT_PUBLIC_HYPERION_2025_JAN=ipfs://your_hyperion_january_2025_media_uri
+NEXT_PUBLIC_SEQUOIA_2025_JAN=ipfs://your_sequoia_january_2025_media_uri
+NEXT_PUBLIC_BLOSSOM_2025_JAN=ipfs://your_blossom_january_2025_media_uri
+NEXT_PUBLIC_SEEDLING_2025_JAN=ipfs://your_seedling_january_2025_media_uri
+NEXT_PUBLIC_SPROUT_2025_JAN=ipfs://your_sprout_january_2025_media_uri
+# Add more as needed for different months and years
 ```
 
 ### Backend Configuration
 ```env
 # Private key for signing mint approvals (keep secure, never expose!)
 BACKEND_PRIVATE_KEY=your_backend_wallet_private_key_here
+
+# Admin secret for managing current month (keep secure!)
+ADMIN_SECRET=your_admin_secret_here
 ```
 
 ## NFT Integration
 
-The application includes a complete SBT (Soulbound Token) minting system integrated from the `/NFT` folder:
+The application includes a complete NFT minting system using the BotanistTokenEIP712 contract:
 
 ### Architecture
-- **6 Separate NFT Contracts** - One dedicated contract per Discord role
-- **Role-Based System** - Each role (Botanist, Hyperion Ambassador, Sequoia Ambassador, Blossom Ambassador, Seedling Ambassador, Sprout) has its own contract
-- **Dynamic Media URIs** - Each contract stores its own default media URI (IPFS URI for NFT images) which is fetched dynamically by the frontend
+- **Single Unified Contract** - One BotanistTokenEIP712 contract handles all roles and levels
+- **Role-Based Access** - Discord roles (Botanist, Hyperion Ambassador, Sequoia Ambassador, Blossom Ambassador, Seedling Ambassador, Sprout) determine minting eligibility
+- **Environment-Based Media** - Media URIs configured via environment variables for each level/year/month combination
+- **EIP-712 Signatures** - Backend signs minting requests using typed structured data standard
+- **Batch Minting** - Support for minting multiple NFTs in a single transaction
+- **Admin-Controlled Minting** - Current month managed via secure admin endpoint
 
 ### Components
-- **SBTMinter Component** - React component that selects the appropriate contract based on user's Discord role and fetches media URIs from the contract
+- **NFTMinter Component** - React component that handles NFT minting with EIP-712 signature verification
 - **API Routes**:
-  - `/api/nft/generate-mint-signature` - Generates backend signature for minting
-- **Smart Contract** - Solidity contract in `/NFT/SBTv5_fixed.sol` (deploy 6 instances, each with its own default media URI)
+  - `/api/nft/generate-mint-signature` - Generates EIP-712 signature for minting
+  - `/api/admin/set-current-month` - Admin endpoint to update the current mintable month
+- **Smart Contract** - BotanistTokenEIP712 contract in `/NFT/BotanistTokenEIP712.sol`
 
 ### Configuration
 
@@ -281,62 +288,114 @@ NEXT_PUBLIC_DISCORD_CLIENT_ID=your_discord_client_id_here
 # Get your project ID at https://cloud.walletconnect.com/
 NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_walletconnect_project_id_here
 
-# NFT/SBT Configuration - One contract per Discord role
-# Deploy 6 instances of the SBT contract (one for each role)
-# Each contract should be deployed with its own defaultMediaURI parameter
-# The frontend will fetch the media URI from each contract dynamically
-# Contract address for Botanist role (highest tier)
-NEXT_PUBLIC_BOTANIST_CONTRACT_ADDRESS=your_botanist_contract_address_here
-# Contract address for Hyperion Ambassador role
-NEXT_PUBLIC_HYPERION_CONTRACT_ADDRESS=your_hyperion_contract_address_here
-# Contract address for Sequoia Ambassador role
-NEXT_PUBLIC_SEQUOIA_CONTRACT_ADDRESS=your_sequoia_contract_address_here
-# Contract address for Blossom Ambassador role
-NEXT_PUBLIC_BLOSSOM_CONTRACT_ADDRESS=your_blossom_contract_address_here
-# Contract address for Seedling Ambassador role
-NEXT_PUBLIC_SEEDLING_CONTRACT_ADDRESS=your_seedling_contract_address_here
-# Contract address for Sprout role (entry tier)
-NEXT_PUBLIC_SPROUT_CONTRACT_ADDRESS=your_sprout_contract_address_here
+# NFT Configuration - Single Unified Contract
+NEXT_PUBLIC_NFT_CONTRACT_ADDRESS=your_nft_contract_address_here
 
 # Backend Private Key
 # Private key of the wallet used to sign mint approvals (keep this secure!)
 BACKEND_PRIVATE_KEY=your_backend_wallet_private_key_here
-```
 
-**Note:** When deploying each contract, pass the appropriate IPFS URI as the `_defaultMediaURI` parameter in the constructor. The frontend will automatically fetch and use these URIs from the contracts.
+# Admin Secret
+# Secret for managing current month (keep this secure!)
+ADMIN_SECRET=your_admin_secret_here
+
+# Media URIs for each level/year/month
+# Format: NEXT_PUBLIC_{LEVEL}_{YEAR}_{MONTH}
+NEXT_PUBLIC_BOTANIST_2025_JAN=ipfs://your_botanist_january_2025_media_uri
+NEXT_PUBLIC_HYPERION_2025_JAN=ipfs://your_hyperion_january_2025_media_uri
+NEXT_PUBLIC_SEQUOIA_2025_JAN=ipfs://your_sequoia_january_2025_media_uri
+NEXT_PUBLIC_BLOSSOM_2025_JAN=ipfs://your_blossom_january_2025_media_uri
+NEXT_PUBLIC_SEEDLING_2025_JAN=ipfs://your_seedling_january_2025_media_uri
+NEXT_PUBLIC_SPROUT_2025_JAN=ipfs://your_sprout_january_2025_media_uri
+# Add more for different months and years as needed
+```
 
 ### Contract Deployment
 
-When deploying the SBT contract for each role, use the following constructor parameters:
+The BotanistTokenEIP712 contract uses the following constructor:
 ```solidity
 constructor(
   address _signerAddress,    // Backend wallet address that signs mint approvals
-  string memory _baseURI,     // Base URI for metadata (e.g., "https://your-api.com/metadata/")
-  string memory _defaultMediaURI  // IPFS URI for the role's NFT image (e.g., "ipfs://QmYourImageHash")
+  string memory _baseURI     // Base URI for metadata (e.g., "https://your-api.com/metadata/")
 )
 ```
 
-Example deployment for Botanist role:
+Example deployment:
 ```javascript
-// Deploy contract with media URI
-const contract = await deploy("ComplexSoulboundToken", [
+// Deploy single unified contract
+const contract = await deploy("BotanistTokenEIP712", [
   backendWalletAddress,
-  "https://your-api.com/metadata/",
-  "ipfs://bafkreifidlnietci72bpenigi2sgbmuisfm6zslmofcmpdig7r5pum5qn4"  // Botanist NFT image
+  "https://your-api.com/metadata/"
 ])
 ```
 
-Repeat for each role with their respective media URIs.
+### Minting Parameters
+
+The contract accepts the following parameters for minting:
+- `to` - Recipient wallet address
+- `levelName` - Discord role/level name (e.g., "Botanist", "Hyperion Ambassador")
+- `monthName` - Month name (e.g., "January", "February")
+- `year` - Year (e.g., 2025)
+- `requestId` - Unique identifier to prevent replay attacks
+- `mediaURI` - IPFS or HTTP URI for the NFT media (from environment variables)
+- `signature` - EIP-712 signature from backend
+
+### Batch Minting
+
+The contract supports batch minting multiple NFTs in one transaction:
+```javascript
+// Mint multiple NFTs at once
+await contract.batchMint(
+  to,
+  [levelName1, levelName2],
+  [monthName1, monthName2],
+  [year1, year2],
+  [requestId1, requestId2],
+  [mediaURI1, mediaURI2],
+  signatures
+)
+```
+
+### Admin Endpoint: Set Current Month
+
+The admin endpoint allows authorized users to update the current mintable month:
+
+**Endpoint:** `POST /api/admin/set-current-month`
+
+**Headers:**
+```
+Content-Type: application/json
+x-admin-secret: YOUR_ADMIN_SECRET
+```
+
+**Body:**
+```json
+{
+  "month": "February",
+  "year": 2025
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "currentMonth": "February",
+  "currentYear": 2025
+}
+```
+
+This ensures users can only mint NFTs for the currently active month as configured by administrators.
 
 ### Usage Flow
 
 1. User verifies Discord membership and role is detected
 2. User connects wallet to Botanix network
-3. System selects the appropriate contract based on user's Discord role
-4. System fetches the media URI from the selected contract
-5. User fills in token metadata (credential type, issuer, expiry, level)
-6. User gets signature from backend
-7. User mints SBT from their role-specific contract with the fetched media URI
+3. Frontend determines the appropriate media URI from environment variables based on user's role, current year, and month
+4. User initiates minting with level name, month name, year, and unique request ID
+5. Backend generates EIP-712 signature with the provided parameters
+6. User mints NFT from the unified contract with the signature
+7. Contract validates signature, checks current month, and mints the NFT
 
 ## Production Deployment
 
@@ -383,7 +442,7 @@ This application uses **Neon Postgres** for data persistence:
 **Schema highlights:**
 - `users` - Discord user information
 - `discord_wallet_connections` - Links Discord accounts to EVM wallet addresses
-- `sbt_mint_events` - Records all NFT mints with Discord ID, wallet address, contract, and metadata
+- `nft_mint_events` - Records all NFT mints with Discord ID, wallet address, contract, and metadata
 - Full relational database with foreign keys and indexes for optimal performance
 
 ### File Uploads
