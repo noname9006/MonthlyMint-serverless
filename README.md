@@ -365,7 +365,7 @@ The admin endpoint allows authorized users to update the current mintable month:
 **Headers:**
 ```
 Content-Type: application/json
-Authorization: Bearer YOUR_ADMIN_SECRET
+x-admin-secret: YOUR_ADMIN_SECRET
 ```
 
 **Body:**
