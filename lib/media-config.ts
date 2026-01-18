@@ -23,22 +23,23 @@ export interface AllMediaConfig {
 
 // Media configuration by level, year, and month
 // Format: MEDIA_LINKS[levelName][year][monthName]
+// NOTE: Fallback URIs are placeholders - ensure environment variables are set in production
 export const MEDIA_LINKS: AllMediaConfig = {
   'Botanist': {
     2025: {
       'January': {
-        ipfsUri: process.env.NEXT_PUBLIC_BOTANIST_2025_JAN || 'ipfs://QmExample1',
+        ipfsUri: process.env.NEXT_PUBLIC_BOTANIST_2025_JAN || '',
         description: 'Botanist January 2025'
       },
       'February': {
-        ipfsUri: process.env.NEXT_PUBLIC_BOTANIST_2025_FEB || 'ipfs://QmExample2',
+        ipfsUri: process.env.NEXT_PUBLIC_BOTANIST_2025_FEB || '',
         description: 'Botanist February 2025'
       },
       // Add more months as needed
     },
     2026: {
       'January': {
-        ipfsUri: process.env.NEXT_PUBLIC_BOTANIST_2026_JAN || 'ipfs://QmExample3',
+        ipfsUri: process.env.NEXT_PUBLIC_BOTANIST_2026_JAN || '',
         description: 'Botanist January 2026'
       },
     }
@@ -46,7 +47,7 @@ export const MEDIA_LINKS: AllMediaConfig = {
   'Hyperion Ambassador': {
     2025: {
       'January': {
-        ipfsUri: process.env.NEXT_PUBLIC_HYPERION_2025_JAN || 'ipfs://QmExample4',
+        ipfsUri: process.env.NEXT_PUBLIC_HYPERION_2025_JAN || '',
         description: 'Hyperion Ambassador January 2025'
       },
     }
@@ -54,7 +55,7 @@ export const MEDIA_LINKS: AllMediaConfig = {
   'Sequoia Ambassador': {
     2025: {
       'January': {
-        ipfsUri: process.env.NEXT_PUBLIC_SEQUOIA_2025_JAN || 'ipfs://QmExample5',
+        ipfsUri: process.env.NEXT_PUBLIC_SEQUOIA_2025_JAN || '',
         description: 'Sequoia Ambassador January 2025'
       },
     }
@@ -62,7 +63,7 @@ export const MEDIA_LINKS: AllMediaConfig = {
   'Blossom Ambassador': {
     2025: {
       'January': {
-        ipfsUri: process.env.NEXT_PUBLIC_BLOSSOM_2025_JAN || 'ipfs://QmExample6',
+        ipfsUri: process.env.NEXT_PUBLIC_BLOSSOM_2025_JAN || '',
         description: 'Blossom Ambassador January 2025'
       },
     }
@@ -70,7 +71,7 @@ export const MEDIA_LINKS: AllMediaConfig = {
   'Seedling Ambassador': {
     2025: {
       'January': {
-        ipfsUri: process.env.NEXT_PUBLIC_SEEDLING_2025_JAN || 'ipfs://QmExample7',
+        ipfsUri: process.env.NEXT_PUBLIC_SEEDLING_2025_JAN || '',
         description: 'Seedling Ambassador January 2025'
       },
     }
@@ -78,7 +79,7 @@ export const MEDIA_LINKS: AllMediaConfig = {
   'Sprout': {
     2025: {
       'January': {
-        ipfsUri: process.env.NEXT_PUBLIC_SPROUT_2025_JAN || 'ipfs://QmExample8',
+        ipfsUri: process.env.NEXT_PUBLIC_SPROUT_2025_JAN || '',
         description: 'Sprout January 2025'
       },
     }

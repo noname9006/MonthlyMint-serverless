@@ -2,7 +2,6 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { ethers } from 'ethers'
 import { getActiveWalletConnectionByAddress, getUserByDiscordId, hasUserMintedForRole, hasUserMintedForContract, getUserMintCount } from '@/lib/db'
 import { chainConfig } from '@/lib/chains'
-import { getCurrentMonth } from '../admin/set-current-month'
 
 const BACKEND_PRIVATE_KEY = process.env.BACKEND_PRIVATE_KEY
 const NFT_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS || ''

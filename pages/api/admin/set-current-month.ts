@@ -1,7 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 
 // In-memory storage for current month (in production, use database or env variable)
-// This will be reset on serverless function cold start, which is acceptable
+// TODO: Move this to database for production to avoid state loss on cold starts
+// This will be reset on serverless function cold start, which is acceptable for development
 // For production, consider storing in database or using environment variables
 let currentMonth = {
   monthName: 'January',
