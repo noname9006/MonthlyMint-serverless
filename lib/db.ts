@@ -89,6 +89,10 @@ export async function initDatabase(): Promise<void> {
         metadata TEXT,
         media_uri TEXT,
         level INTEGER,
+        level_name TEXT,
+        month_name TEXT,
+        year INTEGER,
+        request_id TEXT,
         minted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `
@@ -330,6 +334,10 @@ export interface SbtMintEvent {
   metadata?: string
   media_uri?: string
   level?: number
+  level_name?: string
+  month_name?: string
+  year?: number
+  request_id?: string
   minted_at?: string
 }
 
@@ -355,7 +363,8 @@ export async function logSbtMint(event: SbtMintEvent): Promise<LogSbtMintResult>
     await sql`
       INSERT INTO sbt_mint_events 
       (discord_id, user_id, wallet_address, contract_address, token_id, 
-       transaction_hash, role_name, credential_type, metadata, media_uri, level)
+       transaction_hash, role_name, credential_type, metadata, media_uri, level,
+       level_name, month_name, year, request_id)
       VALUES (
         ${event.discord_id},
         ${event.user_id},
@@ -367,7 +376,11 @@ export async function logSbtMint(event: SbtMintEvent): Promise<LogSbtMintResult>
         ${event.credential_type || null},
         ${event.metadata || null},
         ${event.media_uri || null},
-        ${event.level || null}
+        ${event.level || null},
+        ${event.level_name || null},
+        ${event.month_name || null},
+        ${event.year || null},
+        ${event.request_id || null}
       )
     `
     
