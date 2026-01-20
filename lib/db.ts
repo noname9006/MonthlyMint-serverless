@@ -76,7 +76,7 @@ export async function initDatabase(): Promise<void> {
     `
 
     await sql`
-      CREATE TABLE IF NOT EXISTS sbt_mint_events (
+      CREATE TABLE IF NOT EXISTS nft_mint_events (
         id SERIAL PRIMARY KEY,
         discord_id TEXT NOT NULL,
         user_id INTEGER NOT NULL REFERENCES users(id),
@@ -103,10 +103,10 @@ export async function initDatabase(): Promise<void> {
     await sql`CREATE INDEX IF NOT EXISTS idx_wallet_connect_logs_discord_id ON wallet_connect_logs(discord_id)`
     await sql`CREATE INDEX IF NOT EXISTS idx_discord_wallet_connections_discord_id ON discord_wallet_connections(discord_id)`
     await sql`CREATE INDEX IF NOT EXISTS idx_discord_wallet_connections_active ON discord_wallet_connections(discord_id, is_active)`
-    await sql`CREATE INDEX IF NOT EXISTS idx_sbt_mint_events_discord_id ON sbt_mint_events(discord_id)`
-    await sql`CREATE INDEX IF NOT EXISTS idx_sbt_mint_events_tx_hash ON sbt_mint_events(transaction_hash)`
-    await sql`CREATE INDEX IF NOT EXISTS idx_sbt_mint_events_wallet ON sbt_mint_events(wallet_address)`
-    await sql`CREATE INDEX IF NOT EXISTS idx_sbt_mint_events_contract ON sbt_mint_events(contract_address)`
+    await sql`CREATE INDEX IF NOT EXISTS idx_nft_mint_events_discord_id ON nft_mint_events(discord_id)`
+    await sql`CREATE INDEX IF NOT EXISTS idx_nft_mint_events_tx_hash ON nft_mint_events(transaction_hash)`
+    await sql`CREATE INDEX IF NOT EXISTS idx_nft_mint_events_wallet ON nft_mint_events(wallet_address)`
+    await sql`CREATE INDEX IF NOT EXISTS idx_nft_mint_events_contract ON nft_mint_events(contract_address)`
 
     if (process.env.NODE_ENV !== 'production') {
       console.log('Database schema initialized successfully')
@@ -321,7 +321,7 @@ export async function getActiveWalletConnectionByAddress(discordId: string, evmA
 
 // NFT Mint Event Tracking
 
-export interface SbtMintEvent {
+export interface NftMintEvent {
   id?: number
   discord_id: string
   user_id: number
@@ -342,16 +342,16 @@ export interface SbtMintEvent {
 }
 
 // Log a new mint event
-type LogSbtMintResult = 
+type LogNftMintResult = 
   | { success: true; alreadyLogged: boolean }
   | { success: false; error: string }
 
-export async function logSbtMint(event: SbtMintEvent): Promise<LogSbtMintResult> {
+export async function logNftMint(event: NftMintEvent): Promise<LogNftMintResult> {
   try {
     await ensureSchema()
     // Check if transaction already logged (idempotency)
     const existing = await sql`
-      SELECT id FROM sbt_mint_events WHERE transaction_hash = ${event.transaction_hash}
+      SELECT id FROM nft_mint_events WHERE transaction_hash = ${event.transaction_hash}
     `
     
     if (existing.length > 0) {
@@ -361,7 +361,7 @@ export async function logSbtMint(event: SbtMintEvent): Promise<LogSbtMintResult>
     
     // Insert the mint event
     await sql`
-      INSERT INTO sbt_mint_events 
+      INSERT INTO nft_mint_events 
       (discord_id, user_id, wallet_address, contract_address, token_id, 
        transaction_hash, role_name, credential_type, metadata, media_uri, level,
        level_name, month_name, year, request_id)
@@ -386,7 +386,7 @@ export async function logSbtMint(event: SbtMintEvent): Promise<LogSbtMintResult>
     
     return { success: true, alreadyLogged: false }
   } catch (error) {
-    console.error('Error in logSbtMint:', error)
+    console.error('Error in logNftMint:', error)
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown database error'
@@ -398,27 +398,27 @@ export async function logSbtMint(event: SbtMintEvent): Promise<LogSbtMintResult>
 export async function getUserMintCount(discordId: string): Promise<number> {
   await ensureSchema()
   const result = await sql`
-    SELECT COUNT(*) as count FROM sbt_mint_events WHERE discord_id = ${discordId}
+    SELECT COUNT(*) as count FROM nft_mint_events WHERE discord_id = ${discordId}
   `
   return Number(result[0].count)
 }
 
 // Get all mints for a Discord user
-export async function getUserMints(discordId: string): Promise<SbtMintEvent[]> {
+export async function getUserMints(discordId: string): Promise<NftMintEvent[]> {
   await ensureSchema()
   const result = await sql`
-    SELECT * FROM sbt_mint_events 
+    SELECT * FROM nft_mint_events 
     WHERE discord_id = ${discordId} 
     ORDER BY minted_at DESC
   `
-  return result as SbtMintEvent[]
+  return result as NftMintEvent[]
 }
 
 // Check if user already minted for specific role
 export async function hasUserMintedForRole(discordId: string, roleName: string): Promise<boolean> {
   await ensureSchema()
   const result = await sql`
-    SELECT COUNT(*) as count FROM sbt_mint_events 
+    SELECT COUNT(*) as count FROM nft_mint_events 
     WHERE discord_id = ${discordId} AND role_name = ${roleName}
   `
   return Number(result[0].count) > 0
@@ -428,19 +428,19 @@ export async function hasUserMintedForRole(discordId: string, roleName: string):
 export async function hasUserMintedForContract(discordId: string, contractAddress: string): Promise<boolean> {
   await ensureSchema()
   const result = await sql`
-    SELECT COUNT(*) as count FROM sbt_mint_events 
+    SELECT COUNT(*) as count FROM nft_mint_events 
     WHERE discord_id = ${discordId} AND contract_address = ${contractAddress.toLowerCase()}
   `
   return Number(result[0].count) > 0
 }
 
 // Get mint by transaction hash
-export async function getMintByTxHash(txHash: string): Promise<SbtMintEvent | null> {
+export async function getMintByTxHash(txHash: string): Promise<NftMintEvent | null> {
   await ensureSchema()
   const result = await sql`
-    SELECT * FROM sbt_mint_events WHERE transaction_hash = ${txHash}
+    SELECT * FROM nft_mint_events WHERE transaction_hash = ${txHash}
   `
-  return result.length > 0 ? (result[0] as SbtMintEvent) : null
+  return result.length > 0 ? (result[0] as NftMintEvent) : null
 }
 
 // Close database connection (no-op for Neon serverless, but kept for compatibility)

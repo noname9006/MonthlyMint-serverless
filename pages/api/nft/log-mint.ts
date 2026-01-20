@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { getUserByDiscordId, logSbtMint, getMintByTxHash } from '@/lib/db'
+import { getUserByDiscordId, logNftMint, getMintByTxHash } from '@/lib/db'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -47,7 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Log the mint event - now returns status
-    const result = await logSbtMint({
+    const result = await logNftMint({
       discord_id: discordId,
       user_id: user.id,
       wallet_address: walletAddress,

@@ -3,6 +3,17 @@
  * This replaces the contract-stored media URIs from the old implementation
  */
 
+/**
+ * Helper function to convert CID to ipfs:// URI
+ */
+function cidToIpfsUri(cid: string): string {
+  if (!cid) return ''
+  // If already has ipfs:// prefix, return as-is (backward compatibility)
+  if (cid.startsWith('ipfs://')) return cid
+  // Otherwise, prepend ipfs:// to the CID
+  return `ipfs://${cid}`
+}
+
 // Type definitions for media configuration
 export interface MediaConfig {
   ipfsUri: string
@@ -28,18 +39,18 @@ export const MEDIA_LINKS: AllMediaConfig = {
   'Botanist': {
     2025: {
       'January': {
-        ipfsUri: process.env.NEXT_PUBLIC_BOTANIST_2025_JAN || '',
+        ipfsUri: cidToIpfsUri(process.env.NEXT_PUBLIC_BOTANIST_2025_JAN || ''),
         description: 'Botanist January 2025'
       },
       'February': {
-        ipfsUri: process.env.NEXT_PUBLIC_BOTANIST_2025_FEB || '',
+        ipfsUri: cidToIpfsUri(process.env.NEXT_PUBLIC_BOTANIST_2025_FEB || ''),
         description: 'Botanist February 2025'
       },
       // Add more months as needed
     },
     2026: {
       'January': {
-        ipfsUri: process.env.NEXT_PUBLIC_BOTANIST_2026_JAN || '',
+        ipfsUri: cidToIpfsUri(process.env.NEXT_PUBLIC_BOTANIST_2026_JAN || ''),
         description: 'Botanist January 2026'
       },
     }
@@ -47,7 +58,7 @@ export const MEDIA_LINKS: AllMediaConfig = {
   'Hyperion Ambassador': {
     2025: {
       'January': {
-        ipfsUri: process.env.NEXT_PUBLIC_HYPERION_2025_JAN || '',
+        ipfsUri: cidToIpfsUri(process.env.NEXT_PUBLIC_HYPERION_2025_JAN || ''),
         description: 'Hyperion Ambassador January 2025'
       },
     }
@@ -55,7 +66,7 @@ export const MEDIA_LINKS: AllMediaConfig = {
   'Sequoia Ambassador': {
     2025: {
       'January': {
-        ipfsUri: process.env.NEXT_PUBLIC_SEQUOIA_2025_JAN || '',
+        ipfsUri: cidToIpfsUri(process.env.NEXT_PUBLIC_SEQUOIA_2025_JAN || ''),
         description: 'Sequoia Ambassador January 2025'
       },
     }
@@ -63,7 +74,7 @@ export const MEDIA_LINKS: AllMediaConfig = {
   'Blossom Ambassador': {
     2025: {
       'January': {
-        ipfsUri: process.env.NEXT_PUBLIC_BLOSSOM_2025_JAN || '',
+        ipfsUri: cidToIpfsUri(process.env.NEXT_PUBLIC_BLOSSOM_2025_JAN || ''),
         description: 'Blossom Ambassador January 2025'
       },
     }
@@ -71,7 +82,7 @@ export const MEDIA_LINKS: AllMediaConfig = {
   'Seedling Ambassador': {
     2025: {
       'January': {
-        ipfsUri: process.env.NEXT_PUBLIC_SEEDLING_2025_JAN || '',
+        ipfsUri: cidToIpfsUri(process.env.NEXT_PUBLIC_SEEDLING_2025_JAN || ''),
         description: 'Seedling Ambassador January 2025'
       },
     }
@@ -79,7 +90,7 @@ export const MEDIA_LINKS: AllMediaConfig = {
   'Sprout': {
     2025: {
       'January': {
-        ipfsUri: process.env.NEXT_PUBLIC_SPROUT_2025_JAN || '',
+        ipfsUri: cidToIpfsUri(process.env.NEXT_PUBLIC_SPROUT_2025_JAN || ''),
         description: 'Sprout January 2025'
       },
     }

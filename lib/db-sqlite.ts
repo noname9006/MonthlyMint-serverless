@@ -90,9 +90,9 @@ function ensureTablesExist(database: Database.Database): void {
     )
   `)
 
-  // Create SBT mint events table
+  // Create NFT mint events table
   database.exec(`
-    CREATE TABLE IF NOT EXISTS sbt_mint_events (
+    CREATE TABLE IF NOT EXISTS nft_mint_events (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       discord_id TEXT NOT NULL,
       user_id INTEGER NOT NULL,
@@ -112,18 +112,18 @@ function ensureTablesExist(database: Database.Database): void {
 
   // Indexes for performance
   database.exec(`
-    CREATE INDEX IF NOT EXISTS idx_sbt_discord_id 
-    ON sbt_mint_events(discord_id)
+    CREATE INDEX IF NOT EXISTS idx_nft_discord_id 
+    ON nft_mint_events(discord_id)
   `)
 
   database.exec(`
-    CREATE INDEX IF NOT EXISTS idx_sbt_tx_hash 
-    ON sbt_mint_events(transaction_hash)
+    CREATE INDEX IF NOT EXISTS idx_nft_tx_hash 
+    ON nft_mint_events(transaction_hash)
   `)
 
   database.exec(`
-    CREATE INDEX IF NOT EXISTS idx_sbt_wallet 
-    ON sbt_mint_events(wallet_address)
+    CREATE INDEX IF NOT EXISTS idx_nft_wallet 
+    ON nft_mint_events(wallet_address)
   `)
 }
 
@@ -320,9 +320,9 @@ export function getActiveWalletConnectionByAddress(discordId: string, evmAddress
   return (stmt.get(discordId, evmAddress.toLowerCase()) as DiscordWalletConnection) || null
 }
 
-// SBT Mint Event Tracking
+// NFT Mint Event Tracking
 
-export interface SbtMintEvent {
+export interface NftMintEvent {
   id?: number
   discord_id: string
   user_id: number
@@ -339,17 +339,17 @@ export interface SbtMintEvent {
 }
 
 // Log a new mint event
-type LogSbtMintResult = 
+type LogNftMintResult = 
   | { success: true; alreadyLogged: boolean }
   | { success: false; error: string }
 
-export function logSbtMint(event: SbtMintEvent): LogSbtMintResult {
+export function logNftMint(event: NftMintEvent): LogNftMintResult {
   const database = getDb()
   
   try {
     // Check if transaction already logged (idempotency)
     const existingStmt = database.prepare(`
-      SELECT id FROM sbt_mint_events WHERE transaction_hash = ?
+      SELECT id FROM nft_mint_events WHERE transaction_hash = ?
     `)
     const existing = existingStmt.get(event.transaction_hash)
     
@@ -359,7 +359,7 @@ export function logSbtMint(event: SbtMintEvent): LogSbtMintResult {
     }
     
     const stmt = database.prepare(`
-      INSERT INTO sbt_mint_events 
+      INSERT INTO nft_mint_events 
       (discord_id, user_id, wallet_address, contract_address, token_id, 
        transaction_hash, role_name, credential_type, metadata, media_uri, level)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -386,7 +386,7 @@ export function logSbtMint(event: SbtMintEvent): LogSbtMintResult {
     
     return { success: true, alreadyLogged: false }
   } catch (error) {
-    console.error('Error in logSbtMint:', error)
+    console.error('Error in logNftMint:', error)
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown database error'
@@ -398,28 +398,28 @@ export function logSbtMint(event: SbtMintEvent): LogSbtMintResult {
 export function getUserMintCount(discordId: string): number {
   const database = getDb()
   const stmt = database.prepare(`
-    SELECT COUNT(*) as count FROM sbt_mint_events WHERE discord_id = ?
+    SELECT COUNT(*) as count FROM nft_mint_events WHERE discord_id = ?
   `)
   const result = stmt.get(discordId) as { count: number }
   return result.count
 }
 
 // Get all mints for a Discord user
-export function getUserMints(discordId: string): SbtMintEvent[] {
+export function getUserMints(discordId: string): NftMintEvent[] {
   const database = getDb()
   const stmt = database.prepare(`
-    SELECT * FROM sbt_mint_events 
+    SELECT * FROM nft_mint_events 
     WHERE discord_id = ? 
     ORDER BY minted_at DESC
   `)
-  return stmt.all(discordId) as SbtMintEvent[]
+  return stmt.all(discordId) as NftMintEvent[]
 }
 
 // Check if user already minted for specific role
 export function hasUserMintedForRole(discordId: string, roleName: string): boolean {
   const database = getDb()
   const stmt = database.prepare(`
-    SELECT COUNT(*) as count FROM sbt_mint_events 
+    SELECT COUNT(*) as count FROM nft_mint_events 
     WHERE discord_id = ? AND role_name = ?
   `)
   const result = stmt.get(discordId, roleName) as { count: number }
@@ -430,7 +430,7 @@ export function hasUserMintedForRole(discordId: string, roleName: string): boole
 export function hasUserMintedForContract(discordId: string, contractAddress: string): boolean {
   const database = getDb()
   const stmt = database.prepare(`
-    SELECT COUNT(*) as count FROM sbt_mint_events 
+    SELECT COUNT(*) as count FROM nft_mint_events 
     WHERE discord_id = ? AND contract_address = ?
   `)
   const result = stmt.get(discordId, contractAddress.toLowerCase()) as { count: number }
@@ -438,12 +438,12 @@ export function hasUserMintedForContract(discordId: string, contractAddress: str
 }
 
 // Get mint by transaction hash
-export function getMintByTxHash(txHash: string): SbtMintEvent | null {
+export function getMintByTxHash(txHash: string): NftMintEvent | null {
   const database = getDb()
   const stmt = database.prepare(`
-    SELECT * FROM sbt_mint_events WHERE transaction_hash = ?
+    SELECT * FROM nft_mint_events WHERE transaction_hash = ?
   `)
-  return (stmt.get(txHash) as SbtMintEvent) || null
+  return (stmt.get(txHash) as NftMintEvent) || null
 }
 
 // Close database connection (useful for testing)
