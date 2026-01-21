@@ -35,19 +35,19 @@ export default function Home() {
   const [highestRole, setHighestRole] = useState<{ id: string; name: RoleName } | null>(null)
   const [discordLoading, setDiscordLoading] = useState(false)
   const [discordError, setDiscordError] = useState<string | null>(null)
-  const [showPopup, setShowPopup] = useState(false)
   const [alreadyMinted, setAlreadyMinted] = useState(false)
   const [hasLowerTierAvailable, setHasLowerTierAvailable] = useState(false)
-  const [checkingMintStatus, setCheckingMintStatus] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
 
-  const isDiscordVerified = useMemo(() => Boolean(discordUser && guildMember), [discordUser, guildMember])
+  // Only check discordUser for verification, not guildMember
+  // This allows users to proceed even if guild member check fails
+  // Guild membership and roles are validated server-side during minting
+  const isDiscordVerified = useMemo(() => Boolean(discordUser), [discordUser])
 
   // Wallet connection tracking
   const { address, isConnected } = useAccount()
   const { disconnect } = useDisconnect()
   const lastLoggedAddress = useRef<string | undefined>(undefined)
-  const hasShownPopup = useRef(false)
   
   // Discord popup timer management
   const discordPopupTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -64,6 +64,35 @@ export default function Home() {
       discordPopupIntervalRef.current = null
     }
   }
+
+  // Check mint status when wallet and Discord are connected
+  useEffect(() => {
+    if (isConnected && isDiscordVerified && discordUser && highestRole) {
+      fetch('/api/nft/check-mint-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          discordId: discordUser.id,
+          roleName: highestRole.name,
+        }),
+      })
+        .then(res => {
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`)
+          }
+          return res.json()
+        })
+        .then(data => {
+          if (data.success) {
+            setAlreadyMinted(data.alreadyMinted)
+            setHasLowerTierAvailable(data.hasLowerTierAvailable)
+          }
+        })
+        .catch(err => {
+          console.error('Failed to check mint status:', err)
+        })
+    }
+  }, [isConnected, isDiscordVerified, discordUser, highestRole])
 
   // Check admin status when Discord user changes
   useEffect(() => {
@@ -247,45 +276,9 @@ export default function Home() {
     localStorage.removeItem('discord_role')
     sessionStorage.removeItem('discord_user_id')
     
-    // Reset popup and mint status
-    hasShownPopup.current = false
-    setShowPopup(false)
+    // Reset mint status
     setAlreadyMinted(false)
     setHasLowerTierAvailable(false)
-  }
-
-  const handleProceedToMint = () => {
-    if (!isConnected || !isDiscordVerified || !discordUser || !highestRole) {
-      return
-    }
-
-    setCheckingMintStatus(true)
-    fetch('/api/nft/check-mint-status', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        discordId: discordUser.id,
-        roleName: highestRole.name,
-      }),
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          setAlreadyMinted(data.alreadyMinted)
-          setHasLowerTierAvailable(data.hasLowerTierAvailable)
-        }
-        setShowPopup(true)
-        hasShownPopup.current = true
-      })
-      .catch(err => {
-        console.error('Failed to check mint status:', err)
-        // Show popup anyway on error
-        setShowPopup(true)
-        hasShownPopup.current = true
-      })
-      .finally(() => {
-        setCheckingMintStatus(false)
-      })
   }
 
   return (
@@ -391,53 +384,24 @@ export default function Home() {
                   <ConnectButton label="Connect wallet" showBalance={false} chainStatus="name" />
                 </div>
                 {!isDiscordVerified && <p className="mt-2 text-text-secondary text-sm">Finish Discord login first.</p>}
-                
-                {/* Proceed to Mint Button */}
-                {isDiscordVerified && isConnected && (
-                  <div className="mt-4">
-                    <button 
-                      onClick={handleProceedToMint}
-                      disabled={checkingMintStatus}
-                      className="btn-cyber w-full"
-                    >
-                      {checkingMintStatus ? 'Checking...' : 'Proceed to Mint'}
-                    </button>
-                  </div>
-                )}
               </div>
             </div>
           </div>
-        </section>
 
-        {/* Popup Modal */}
-        {showPopup && isConnected && isDiscordVerified && highestRole && (
-          <>
-            <div className="fixed inset-0 bg-background bg-opacity-90 z-[999]" onClick={() => setShowPopup(false)} />
-            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[1000] w-full max-w-2xl max-h-[90vh] px-4">
-              <div className="card-cyber p-8 relative">
-                <button 
-                  className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center bg-surface font-bold text-2xl transition-all duration-200 text-accent hover:text-accent-neon border-2 border-accent hover:border-accent-neon" 
-                  onClick={() => setShowPopup(false)}
-                  style={{clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))'}}
-                >
-                  ×
-                </button>
-                <h2 className="text-3xl font-bold font-proxima text-text-primary text-center mb-2 uppercase">Your Ambassador Level</h2>
-                <p className="text-4xl font-bold font-proxima text-accent text-center mb-6" style={{textShadow: 'var(--glow-yellow)'}}>{highestRole.name}</p>
-                <div className="divider-cyber mb-6" />
-                {discordUser && (
-                  <SBTMinter 
-                    discordId={discordUser.id} 
-                    roleName={highestRole.name} 
-                    sectionNumber={0}
-                    alreadyMinted={alreadyMinted}
-                    hasLowerTierAvailable={hasLowerTierAvailable}
-                  />
-                )}
-              </div>
+          {/* Mint Section - shown directly when wallet and discord are connected */}
+          {isDiscordVerified && isConnected && highestRole && discordUser && (
+            <div className="mt-8">
+              <div className="divider-cyber mb-8"></div>
+              <SBTMinter 
+                discordId={discordUser.id} 
+                roleName={highestRole.name} 
+                sectionNumber={3}
+                alreadyMinted={alreadyMinted}
+                hasLowerTierAvailable={hasLowerTierAvailable}
+              />
             </div>
-          </>
-        )}
+          )}
+        </section>
       </main>
     </>
   )
