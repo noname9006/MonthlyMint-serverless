@@ -57,6 +57,10 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
   const [currentMonth, setCurrentMonth] = useState<{ monthName: string; year: number } | null>(null)
   const [isLoadingMonth, setIsLoadingMonth] = useState(true)
   
+  // Media URI state - fetch from database
+  const [mediaURI, setMediaURI] = useState<string | null>(null)
+  const [isLoadingMedia, setIsLoadingMedia] = useState(false)
+  
   // Combine prop and local state to determine if minted
   const isMinted = alreadyMinted || localMinted
   
@@ -112,8 +116,53 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
     }
   }
 
+  // Fetch media from database when current month and role are available
+  useEffect(() => {
+    if (currentMonth && roleName) {
+      fetchMediaFromDatabase(roleName, currentMonth.year, currentMonth.monthName)
+    }
+  }, [currentMonth, roleName])
+
+  const fetchMediaFromDatabase = async (level: string, year: number, month: string) => {
+    try {
+      setIsLoadingMedia(true)
+      const response = await fetch('/api/nft/get-media', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          levelName: level,
+          year: year,
+          monthName: month,
+        }),
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.ipfsCid) {
+          // Convert CID to ipfs:// URI
+          const ipfsUri = data.ipfsCid.startsWith('ipfs://') ? data.ipfsCid : `ipfs://${data.ipfsCid}`
+          setMediaURI(ipfsUri)
+        } else {
+          // Try fallback to environment variables
+          const envMediaURI = getMediaURI(level, year, month)
+          setMediaURI(envMediaURI)
+        }
+      } else {
+        // Fallback to environment variables
+        const envMediaURI = getMediaURI(level, year, month)
+        setMediaURI(envMediaURI)
+      }
+    } catch (err) {
+      console.error('Failed to fetch media from database:', err)
+      // Fallback to environment variables
+      const envMediaURI = getMediaURI(level, year, month)
+      setMediaURI(envMediaURI)
+    } finally {
+      setIsLoadingMedia(false)
+    }
+  }
+
   // Get media URI for current role and month
-  const mediaURI = currentMonth ? getMediaURI(roleName, currentMonth.year, currentMonth.monthName) : null
   const mediaGatewayURL = mediaURI ? ipfsToGateway(mediaURI) : null
 
   // Helper function to wait for transaction and log the mint
@@ -387,17 +436,6 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
       return
     }
 
-    // Get media URI for the lower tier
-    const tierMediaURI = getMediaURI(tierName, currentMonth.year, currentMonth.monthName)
-    
-    if (!tierMediaURI) {
-      setLowerTierMintStates(prev => ({
-        ...prev,
-        [tierName]: { status: 'unminted', error: `Media not available for ${tierName}` }
-      }))
-      return
-    }
-
     // Update state to show this tier is minting
     setLowerTierMintStates(prev => ({
       ...prev,
@@ -405,6 +443,40 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
     }))
 
     try {
+      // Fetch media URI for the lower tier from database
+      const mediaResponse = await fetch('/api/nft/get-media', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          levelName: tierName,
+          year: currentMonth.year,
+          monthName: currentMonth.monthName,
+        }),
+      })
+      
+      let tierMediaURI: string | null = null
+      
+      if (mediaResponse.ok) {
+        const mediaData = await mediaResponse.json()
+        if (mediaData.success && mediaData.ipfsCid) {
+          // Convert CID to ipfs:// URI
+          tierMediaURI = mediaData.ipfsCid.startsWith('ipfs://') ? mediaData.ipfsCid : `ipfs://${mediaData.ipfsCid}`
+        }
+      }
+      
+      // Fallback to environment variables if database fetch failed
+      if (!tierMediaURI) {
+        tierMediaURI = getMediaURI(tierName, currentMonth.year, currentMonth.monthName)
+      }
+      
+      if (!tierMediaURI) {
+        setLowerTierMintStates(prev => ({
+          ...prev,
+          [tierName]: { status: 'unminted', error: `Media not available for ${tierName}` }
+        }))
+        return
+      }
+
       // Get the signature
       const response = await fetch('/api/nft/generate-mint-signature', {
         method: 'POST',
@@ -493,7 +565,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
   }
 
   // Computed variables for better readability
-  const isMintButtonDisabled = isMinted || loading || !address || !!pendingTxHash || isLoadingMonth || !mediaURI
+  const isMintButtonDisabled = isMinted || loading || !address || !!pendingTxHash || isLoadingMonth || isLoadingMedia || !mediaURI
 
   return(
     <div className={isMainPage ? 'card-cyber p-6 mt-8' : ''}>
@@ -530,7 +602,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
               disabled={isMintButtonDisabled}
               className="btn-cyber w-full"
             >
-              {isLoadingMonth ? 'Loading month...' : loading ? 'Minting...' : pendingTxHash ? 'Minting...' : isMinted ? 'Minted, see you next month!' : 'Mint your NFT (Freemint)'}
+              {isLoadingMonth || isLoadingMedia ? 'Loading...' : loading ? 'Minting...' : pendingTxHash ? 'Minting...' : isMinted ? 'Minted, see you next month!' : 'Mint your NFT (Freemint)'}
             </button>
           </div>
 
@@ -609,7 +681,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
 
         <div className="flex-1 min-w-[300px]">
           <div className="card-cyber p-4 flex justify-center items-center">
-            {isLoadingMonth ? (
+            {isLoadingMonth || isLoadingMedia ? (
               <div className="max-w-full max-h-96 flex items-center justify-center">
                 <p className="text-text-secondary">Loading media...</p>
               </div>

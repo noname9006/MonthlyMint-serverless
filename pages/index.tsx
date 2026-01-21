@@ -4,6 +4,7 @@ import { useRouter } from 'next/router'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount, useDisconnect } from 'wagmi'
 import { SBTMinter } from '@/components/SBTMinter'
+import { MintModal } from '@/components/MintModal'
 import { chainConfig } from '@/lib/chains'
 
 import type { RoleName } from '@/lib/discord'
@@ -38,11 +39,17 @@ export default function Home() {
   const [alreadyMinted, setAlreadyMinted] = useState(false)
   const [hasLowerTierAvailable, setHasLowerTierAvailable] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [showMintModal, setShowMintModal] = useState(false)
 
   // Only check discordUser for verification, not guildMember
   // This allows users to proceed even if guild member check fails
   // Guild membership and roles are validated server-side during minting
   const isDiscordVerified = useMemo(() => Boolean(discordUser), [discordUser])
+
+  // Check if user is eligible to proceed to mint (both Discord and wallet connected, has role)
+  const canProceedToMint = useMemo(() => {
+    return isDiscordVerified && isConnected && Boolean(highestRole) && Boolean(guildMember)
+  }, [isDiscordVerified, isConnected, highestRole, guildMember])
 
   // Wallet connection tracking
   const { address, isConnected } = useAccount()
@@ -388,18 +395,68 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Mint Section - shown directly when wallet and discord are connected */}
-          {isDiscordVerified && isConnected && highestRole && discordUser && (
+          {/* Mint Section - shown when wallet and discord are connected */}
+          {isDiscordVerified && isConnected && (
             <div className="mt-8">
               <div className="divider-cyber mb-8"></div>
+              <div className="card-cyber p-6">
+                <div className="mb-6">
+                  <h2 className="text-2xl font-bold font-proxima text-text-primary uppercase">Step 3: Mint your NFT</h2>
+                </div>
+                
+                <div className="flex gap-5 flex-wrap">
+                  <div className="flex-1 min-w-[300px]">
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <h3 className="text-lg font-bold font-proxima text-text-primary uppercase">Ready to mint</h3>
+                      <span className={`badge-cyber ${canProceedToMint ? 'text-accent' : 'text-text-secondary'}`}>
+                        {canProceedToMint ? 'Ready' : 'Checking...'}
+                      </span>
+                    </div>
+                    
+                    {highestRole ? (
+                      <>
+                        <p className="text-text-secondary mb-4">
+                          Your level: <span className="text-accent font-bold">{highestRole.name}</span>
+                        </p>
+                        <p className="text-text-secondary mb-4">
+                          {guildMember 
+                            ? 'You are a member of the guild and have a valid role. Click below to proceed to mint your NFT.'
+                            : 'Checking guild membership...'}
+                        </p>
+                        <button
+                          onClick={() => setShowMintModal(true)}
+                          disabled={!canProceedToMint}
+                          className="btn-cyber w-full"
+                        >
+                          Proceed to Mint
+                        </button>
+                      </>
+                    ) : (
+                      <p className="text-text-secondary mb-4">
+                        No eligible role detected. Please ensure you have one of the ambassador roles in the Botanix Discord server.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Mint Modal */}
+          {highestRole && discordUser && (
+            <MintModal isOpen={showMintModal} onClose={() => setShowMintModal(false)}>
+              <div className="mb-6">
+                <h2 className="text-3xl font-bold font-proxima text-text-primary uppercase text-center">Mint Your NFT</h2>
+                <p className="text-center text-text-secondary mt-2">Level: <span className="text-accent font-bold">{highestRole.name}</span></p>
+              </div>
               <SBTMinter 
                 discordId={discordUser.id} 
                 roleName={highestRole.name} 
-                sectionNumber={3}
+                sectionNumber={0}
                 alreadyMinted={alreadyMinted}
                 hasLowerTierAvailable={hasLowerTierAvailable}
               />
-            </div>
+            </MintModal>
           )}
         </section>
       </main>
