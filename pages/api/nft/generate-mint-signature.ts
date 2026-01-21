@@ -4,7 +4,7 @@ import { getActiveWalletConnectionByAddress, getUserByDiscordId, hasUserMintedFo
 import { chainConfig } from '@/lib/chains'
 
 const BACKEND_PRIVATE_KEY = process.env.BACKEND_PRIVATE_KEY
-const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_BOTANIST_CONTRACT_ADDRESS || ''
+const NFT_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS || ''
 
 // In-memory cache to track pending mints with expiration
 // Note: In serverless environments, each instance maintains its own Map.
@@ -50,9 +50,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { userWalletAddress, metadata, mediaURI, credentialType, issuerName, level, discordId, roleName, contractAddress } = req.body
+    const { 
+      userWalletAddress, 
+      metadata, 
+      mediaURI, 
+      credentialType, 
+      issuerName, 
+      discordId, 
+      roleName, 
+      contractAddress,
+      levelName,
+      monthName,
+      year
+    } = req.body
 
-    if (!userWalletAddress || !mediaURI || !credentialType || !issuerName || !level) {
+    if (!userWalletAddress || !mediaURI || !credentialType || !issuerName) {
       return res.status(400).json({ error: 'Missing required fields' })
     }
 
@@ -73,6 +85,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (!contractAddress) {
       return res.status(400).json({ error: 'Contract address required' })
+    }
+
+    // Validate new required fields
+    if (!levelName || !monthName || !year) {
+      return res.status(400).json({ error: 'levelName, monthName, and year are required' })
     }
 
     const user = await getUserByDiscordId(discordId)
@@ -107,7 +124,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (await hasUserMintedForRole(discordId, roleName)) {
       console.log(`User ${discordId} already minted for role: ${roleName}`)
       return res.status(403).json({ 
-        error: 'You have already minted an SBT for this role',
+        error: 'You have already minted an NFT for this role',
         code: 'ALREADY_MINTED_ROLE'
       })
     }
@@ -116,7 +133,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (await hasUserMintedForContract(discordId, contractAddress)) {
       console.log(`User ${discordId} already minted from contract: ${contractAddress}`)
       return res.status(403).json({ 
-        error: 'You have already minted an SBT from this contract',
+        error: 'You have already minted an NFT from this contract',
         code: 'ALREADY_MINTED_CONTRACT'
       })
     }
@@ -126,7 +143,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (totalMints >= MAX_MINTS_PER_USER) {
       console.log(`User ${discordId} exceeded max mints: ${totalMints}/${MAX_MINTS_PER_USER}`)
       return res.status(403).json({ 
-        error: `You have reached the maximum number of SBT mints (${MAX_MINTS_PER_USER})`,
+        error: `You have reached the maximum number of NFT mints (${MAX_MINTS_PER_USER})`,
         code: 'MAX_MINTS_EXCEEDED'
       })
     }
@@ -150,14 +167,54 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Create wallet for signing
     const wallet = new ethers.Wallet(BACKEND_PRIVATE_KEY)
 
-    // Create message to sign (must match contract logic with nonce)
-    const messageHash = ethers.utils.solidityKeccak256(
-      ['address', 'string', 'string', 'string', 'string', 'uint256', 'uint256'],
-      [userWalletAddress, metadata, mediaURI, credentialType, issuerName, nonce, level]
+    // Generate unique request ID
+    const requestId = ethers.utils.keccak256(
+      ethers.utils.defaultAbiCoder.encode(
+        ['address', 'uint256', 'uint256', 'bytes32'],
+        [userWalletAddress, nonce, Date.now(), ethers.utils.randomBytes(32)]
+      )
     )
 
-    // Sign with backend wallet
-    const signature = await wallet.signMessage(ethers.utils.arrayify(messageHash))
+    // Create EIP-712 domain
+    const domain = {
+      name: 'Botanix Ambassador',
+      version: '1',
+      chainId: chainConfig.id,
+      verifyingContract: contractAddress
+    }
+
+    // Create EIP-712 types
+    const types = {
+      Mint: [
+        { name: 'to', type: 'address' },
+        { name: 'metadata', type: 'string' },
+        { name: 'mediaURI', type: 'string' },
+        { name: 'credentialType', type: 'string' },
+        { name: 'issuerName', type: 'string' },
+        { name: 'nonce', type: 'uint256' },
+        { name: 'levelName', type: 'string' },
+        { name: 'monthName', type: 'string' },
+        { name: 'yearValue', type: 'uint256' },
+        { name: 'requestId', type: 'bytes32' }
+      ]
+    }
+
+    // Create message to sign
+    const message = {
+      to: userWalletAddress,
+      metadata: metadata,
+      mediaURI: mediaURI,
+      credentialType: credentialType,
+      issuerName: issuerName,
+      nonce: nonce.toNumber(),
+      levelName: levelName,
+      monthName: monthName,
+      yearValue: year,
+      requestId: requestId
+    }
+
+    // Sign with EIP-712
+    const signature = await wallet._signTypedData(domain, types, message)
 
     // Add to pending mints cache (optimistic locking)
     // Note: This entry will naturally expire after 5 minutes.
@@ -182,7 +239,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       credentialType: credentialType,
       issuerName: issuerName,
       nonce: nonce.toNumber(),
-      level: level,
+      levelName: levelName,
+      monthName: monthName,
+      year: year,
+      requestId: requestId
     })
   } catch (error) {
     console.error('Signature generation error:', error)

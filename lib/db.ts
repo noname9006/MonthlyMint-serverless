@@ -76,7 +76,7 @@ export async function initDatabase(): Promise<void> {
     `
 
     await sql`
-      CREATE TABLE IF NOT EXISTS sbt_mint_events (
+      CREATE TABLE IF NOT EXISTS nft_mint_events (
         id SERIAL PRIMARY KEY,
         discord_id TEXT NOT NULL,
         user_id INTEGER NOT NULL REFERENCES users(id),
@@ -89,7 +89,36 @@ export async function initDatabase(): Promise<void> {
         metadata TEXT,
         media_uri TEXT,
         level INTEGER,
+        level_name TEXT,
+        month_name TEXT,
+        year INTEGER,
+        request_id TEXT,
         minted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `
+
+    // Create table for current month/year settings
+    await sql`
+      CREATE TABLE IF NOT EXISTS current_month_settings (
+        id SERIAL PRIMARY KEY,
+        month_name TEXT NOT NULL,
+        year INTEGER NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `
+
+    // Create table for media storage (IPFS CIDs)
+    await sql`
+      CREATE TABLE IF NOT EXISTS media_storage (
+        id SERIAL PRIMARY KEY,
+        level_name TEXT NOT NULL,
+        year INTEGER NOT NULL,
+        month_name TEXT NOT NULL,
+        ipfs_cid TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (level_name, year, month_name)
       )
     `
 
@@ -99,10 +128,11 @@ export async function initDatabase(): Promise<void> {
     await sql`CREATE INDEX IF NOT EXISTS idx_wallet_connect_logs_discord_id ON wallet_connect_logs(discord_id)`
     await sql`CREATE INDEX IF NOT EXISTS idx_discord_wallet_connections_discord_id ON discord_wallet_connections(discord_id)`
     await sql`CREATE INDEX IF NOT EXISTS idx_discord_wallet_connections_active ON discord_wallet_connections(discord_id, is_active)`
-    await sql`CREATE INDEX IF NOT EXISTS idx_sbt_mint_events_discord_id ON sbt_mint_events(discord_id)`
-    await sql`CREATE INDEX IF NOT EXISTS idx_sbt_mint_events_tx_hash ON sbt_mint_events(transaction_hash)`
-    await sql`CREATE INDEX IF NOT EXISTS idx_sbt_mint_events_wallet ON sbt_mint_events(wallet_address)`
-    await sql`CREATE INDEX IF NOT EXISTS idx_sbt_mint_events_contract ON sbt_mint_events(contract_address)`
+    await sql`CREATE INDEX IF NOT EXISTS idx_nft_mint_events_discord_id ON nft_mint_events(discord_id)`
+    await sql`CREATE INDEX IF NOT EXISTS idx_nft_mint_events_tx_hash ON nft_mint_events(transaction_hash)`
+    await sql`CREATE INDEX IF NOT EXISTS idx_nft_mint_events_wallet ON nft_mint_events(wallet_address)`
+    await sql`CREATE INDEX IF NOT EXISTS idx_nft_mint_events_contract ON nft_mint_events(contract_address)`
+    await sql`CREATE INDEX IF NOT EXISTS idx_media_storage_lookup ON media_storage(level_name, year, month_name)`
 
     if (process.env.NODE_ENV !== 'production') {
       console.log('Database schema initialized successfully')
@@ -315,9 +345,9 @@ export async function getActiveWalletConnectionByAddress(discordId: string, evmA
   return result.length > 0 ? (result[0] as DiscordWalletConnection) : null
 }
 
-// SBT Mint Event Tracking
+// NFT Mint Event Tracking
 
-export interface SbtMintEvent {
+export interface NftMintEvent {
   id?: number
   discord_id: string
   user_id: number
@@ -330,20 +360,24 @@ export interface SbtMintEvent {
   metadata?: string
   media_uri?: string
   level?: number
+  level_name?: string
+  month_name?: string
+  year?: number
+  request_id?: string
   minted_at?: string
 }
 
 // Log a new mint event
-type LogSbtMintResult = 
+type LogNftMintResult = 
   | { success: true; alreadyLogged: boolean }
   | { success: false; error: string }
 
-export async function logSbtMint(event: SbtMintEvent): Promise<LogSbtMintResult> {
+export async function logNftMint(event: NftMintEvent): Promise<LogNftMintResult> {
   try {
     await ensureSchema()
     // Check if transaction already logged (idempotency)
     const existing = await sql`
-      SELECT id FROM sbt_mint_events WHERE transaction_hash = ${event.transaction_hash}
+      SELECT id FROM nft_mint_events WHERE transaction_hash = ${event.transaction_hash}
     `
     
     if (existing.length > 0) {
@@ -353,9 +387,10 @@ export async function logSbtMint(event: SbtMintEvent): Promise<LogSbtMintResult>
     
     // Insert the mint event
     await sql`
-      INSERT INTO sbt_mint_events 
+      INSERT INTO nft_mint_events 
       (discord_id, user_id, wallet_address, contract_address, token_id, 
-       transaction_hash, role_name, credential_type, metadata, media_uri, level)
+       transaction_hash, role_name, credential_type, metadata, media_uri, level,
+       level_name, month_name, year, request_id)
       VALUES (
         ${event.discord_id},
         ${event.user_id},
@@ -367,13 +402,17 @@ export async function logSbtMint(event: SbtMintEvent): Promise<LogSbtMintResult>
         ${event.credential_type || null},
         ${event.metadata || null},
         ${event.media_uri || null},
-        ${event.level || null}
+        ${event.level || null},
+        ${event.level_name || null},
+        ${event.month_name || null},
+        ${event.year || null},
+        ${event.request_id || null}
       )
     `
     
     return { success: true, alreadyLogged: false }
   } catch (error) {
-    console.error('Error in logSbtMint:', error)
+    console.error('Error in logNftMint:', error)
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown database error'
@@ -385,27 +424,27 @@ export async function logSbtMint(event: SbtMintEvent): Promise<LogSbtMintResult>
 export async function getUserMintCount(discordId: string): Promise<number> {
   await ensureSchema()
   const result = await sql`
-    SELECT COUNT(*) as count FROM sbt_mint_events WHERE discord_id = ${discordId}
+    SELECT COUNT(*) as count FROM nft_mint_events WHERE discord_id = ${discordId}
   `
   return Number(result[0].count)
 }
 
 // Get all mints for a Discord user
-export async function getUserMints(discordId: string): Promise<SbtMintEvent[]> {
+export async function getUserMints(discordId: string): Promise<NftMintEvent[]> {
   await ensureSchema()
   const result = await sql`
-    SELECT * FROM sbt_mint_events 
+    SELECT * FROM nft_mint_events 
     WHERE discord_id = ${discordId} 
     ORDER BY minted_at DESC
   `
-  return result as SbtMintEvent[]
+  return result as NftMintEvent[]
 }
 
 // Check if user already minted for specific role
 export async function hasUserMintedForRole(discordId: string, roleName: string): Promise<boolean> {
   await ensureSchema()
   const result = await sql`
-    SELECT COUNT(*) as count FROM sbt_mint_events 
+    SELECT COUNT(*) as count FROM nft_mint_events 
     WHERE discord_id = ${discordId} AND role_name = ${roleName}
   `
   return Number(result[0].count) > 0
@@ -415,23 +454,148 @@ export async function hasUserMintedForRole(discordId: string, roleName: string):
 export async function hasUserMintedForContract(discordId: string, contractAddress: string): Promise<boolean> {
   await ensureSchema()
   const result = await sql`
-    SELECT COUNT(*) as count FROM sbt_mint_events 
+    SELECT COUNT(*) as count FROM nft_mint_events 
     WHERE discord_id = ${discordId} AND contract_address = ${contractAddress.toLowerCase()}
   `
   return Number(result[0].count) > 0
 }
 
 // Get mint by transaction hash
-export async function getMintByTxHash(txHash: string): Promise<SbtMintEvent | null> {
+export async function getMintByTxHash(txHash: string): Promise<NftMintEvent | null> {
   await ensureSchema()
   const result = await sql`
-    SELECT * FROM sbt_mint_events WHERE transaction_hash = ${txHash}
+    SELECT * FROM nft_mint_events WHERE transaction_hash = ${txHash}
   `
-  return result.length > 0 ? (result[0] as SbtMintEvent) : null
+  return result.length > 0 ? (result[0] as NftMintEvent) : null
 }
 
 // Close database connection (no-op for Neon serverless, but kept for compatibility)
 export function closeDatabase(): void {
   // Neon serverless doesn't require explicit connection closing
   console.log('Neon serverless - no connection cleanup required')
+}
+
+// Current Month Settings Functions
+
+export interface CurrentMonthSetting {
+  id: number
+  month_name: string
+  year: number
+  created_at: string
+  updated_at: string
+}
+
+export async function getCurrentMonthSetting(): Promise<CurrentMonthSetting | null> {
+  await ensureSchema()
+  const result = await sql`
+    SELECT * FROM current_month_settings 
+    ORDER BY updated_at DESC 
+    LIMIT 1
+  `
+  return result.length > 0 ? (result[0] as CurrentMonthSetting) : null
+}
+
+export async function setCurrentMonthSetting(monthName: string, year: number): Promise<CurrentMonthSetting> {
+  await ensureSchema()
+  
+  // Check if a record exists
+  const existing = await sql`SELECT id FROM current_month_settings LIMIT 1`
+  
+  if (existing.length > 0) {
+    // Update existing record
+    const result = await sql`
+      UPDATE current_month_settings
+      SET month_name = ${monthName},
+          year = ${year},
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${existing[0].id}
+      RETURNING *
+    `
+    return result[0] as CurrentMonthSetting
+  } else {
+    // Insert new record
+    const result = await sql`
+      INSERT INTO current_month_settings (month_name, year)
+      VALUES (${monthName}, ${year})
+      RETURNING *
+    `
+    return result[0] as CurrentMonthSetting
+  }
+}
+
+// Media Storage Functions
+
+export interface MediaStorage {
+  id: number
+  level_name: string
+  year: number
+  month_name: string
+  ipfs_cid: string
+  created_at: string
+  updated_at: string
+}
+
+export async function getMediaStorage(levelName: string, year: number, monthName: string): Promise<MediaStorage | null> {
+  await ensureSchema()
+  const result = await sql`
+    SELECT * FROM media_storage 
+    WHERE level_name = ${levelName} 
+      AND year = ${year} 
+      AND month_name = ${monthName}
+  `
+  return result.length > 0 ? (result[0] as MediaStorage) : null
+}
+
+export async function getAllMediaStorageForYearMonth(year: number, monthName: string): Promise<MediaStorage[]> {
+  await ensureSchema()
+  const result = await sql`
+    SELECT * FROM media_storage 
+    WHERE year = ${year} AND month_name = ${monthName}
+    ORDER BY level_name
+  `
+  return result as MediaStorage[]
+}
+
+export async function upsertMediaStorage(levelName: string, year: number, monthName: string, ipfsCid: string): Promise<MediaStorage> {
+  await ensureSchema()
+  
+  // Check if exists
+  const existing = await sql`
+    SELECT id FROM media_storage 
+    WHERE level_name = ${levelName} 
+      AND year = ${year} 
+      AND month_name = ${monthName}
+  `
+  
+  if (existing.length > 0) {
+    // Update existing
+    const result = await sql`
+      UPDATE media_storage 
+      SET ipfs_cid = ${ipfsCid}, 
+          updated_at = CURRENT_TIMESTAMP
+      WHERE level_name = ${levelName} 
+        AND year = ${year} 
+        AND month_name = ${monthName}
+      RETURNING *
+    `
+    return result[0] as MediaStorage
+  } else {
+    // Insert new
+    const result = await sql`
+      INSERT INTO media_storage (level_name, year, month_name, ipfs_cid)
+      VALUES (${levelName}, ${year}, ${monthName}, ${ipfsCid})
+      RETURNING *
+    `
+    return result[0] as MediaStorage
+  }
+}
+
+export async function deleteMediaStorage(levelName: string, year: number, monthName: string): Promise<void> {
+  await ensureSchema()
+  await sql`
+    DELETE FROM media_storage 
+    WHERE level_name = ${levelName} 
+      AND year = ${year} 
+      AND month_name = ${monthName}
+  `
 }
