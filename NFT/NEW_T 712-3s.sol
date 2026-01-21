@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+import "@openzeppelin/contracts/utils/Base64.sol";
 
 contract BotanixAmbassadorNFT is ERC721URIStorage, Ownable {
     using Strings for uint256;
@@ -545,10 +546,55 @@ contract BotanixAmbassadorNFT is ERC721URIStorage, Ownable {
         TokenData memory data = tokenData[tokenId];
         TierInfo memory tier = tiers[data.levelName][data.yearValue][data.monthName];
 
+        // If tier has a custom baseURI, use it
         if (bytes(tier.baseURI).length > 0) {
             return tier.baseURI;
         }
 
-        return data.mediaURI;
+        // Build metadata JSON on-chain with tier information
+        string memory name = string(abi.encodePacked(
+            tier.name,
+            " - ",
+            data.levelName,
+            " - ",
+            data.monthName,
+            " ",
+            data.yearValue.toString()
+        ));
+
+        string memory description = bytes(tier.description).length > 0 
+            ? tier.description 
+            : string(abi.encodePacked("Botanix Ambassador NFT for ", data.levelName, " tier"));
+
+        string memory json = Base64.encode(
+            bytes(
+                string(
+                    abi.encodePacked(
+                        '{"name":"',
+                        name,
+                        '","description":"',
+                        description,
+                        '","image":"',
+                        data.mediaURI,
+                        '","attributes":[',
+                        '{"trait_type":"Level","value":"',
+                        data.levelName,
+                        '"},',
+                        '{"trait_type":"Month","value":"',
+                        data.monthName,
+                        '"},',
+                        '{"trait_type":"Year","value":"',
+                        data.yearValue.toString(),
+                        '"},',
+                        '{"trait_type":"Credential Type","value":"',
+                        data.credentialType,
+                        '"}',
+                        ']}'
+                    )
+                )
+            )
+        );
+
+        return string(abi.encodePacked("data:application/json;base64,", json));
     }
 }

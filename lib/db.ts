@@ -83,7 +83,7 @@ export async function initDatabase(): Promise<void> {
         wallet_address TEXT NOT NULL,
         contract_address TEXT NOT NULL,
         token_id TEXT,
-        transaction_hash TEXT UNIQUE NOT NULL,
+        transaction_hash TEXT NOT NULL,
         role_name TEXT,
         credential_type TEXT,
         metadata TEXT,
@@ -92,7 +92,7 @@ export async function initDatabase(): Promise<void> {
         level_name TEXT,
         month_name TEXT,
         year INTEGER,
-        request_id TEXT,
+        request_id TEXT UNIQUE,
         minted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `
@@ -375,14 +375,29 @@ type LogNftMintResult =
 export async function logNftMint(event: NftMintEvent): Promise<LogNftMintResult> {
   try {
     await ensureSchema()
-    // Check if transaction already logged (idempotency)
-    const existing = await sql`
-      SELECT id FROM nft_mint_events WHERE transaction_hash = ${event.transaction_hash}
-    `
-    
-    if (existing.length > 0) {
-      console.log(`Mint already logged for tx: ${event.transaction_hash}`)
-      return { success: true, alreadyLogged: true }
+    // Check if this specific mint already logged using request_id (idempotency)
+    // For batch mints, multiple tokens can share the same transaction_hash
+    if (event.request_id) {
+      const existing = await sql`
+        SELECT id FROM nft_mint_events WHERE request_id = ${event.request_id}
+      `
+      
+      if (existing.length > 0) {
+        console.log(`Mint already logged for request_id: ${event.request_id}`)
+        return { success: true, alreadyLogged: true }
+      }
+    } else {
+      // Fallback: check by transaction_hash and level_name for old mints without request_id
+      const existing = await sql`
+        SELECT id FROM nft_mint_events 
+        WHERE transaction_hash = ${event.transaction_hash} 
+          AND level_name = ${event.level_name || null}
+      `
+      
+      if (existing.length > 0) {
+        console.log(`Mint already logged for tx: ${event.transaction_hash}, level: ${event.level_name}`)
+        return { success: true, alreadyLogged: true }
+      }
     }
     
     // Insert the mint event
