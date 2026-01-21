@@ -108,7 +108,6 @@ export const SBT_ABI = [
       { "internalType": "string", "name": "mediaURI", "type": "string" },
       { "internalType": "string", "name": "credentialType", "type": "string" },
       { "internalType": "string", "name": "issuerName", "type": "string" },
-      { "internalType": "uint256", "name": "mintedAt", "type": "uint256" },
       { "internalType": "bool", "name": "revoked", "type": "bool" },
       { "internalType": "uint256", "name": "level", "type": "uint256" }
     ],
