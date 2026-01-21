@@ -89,7 +89,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Create EIP-712 domain
     const domain = {
-      name: 'Botanist Collection',
+      name: 'Botanix Ambassador',
       version: '1',
       chainId: chainConfig.id,
       verifyingContract: contractAddress
@@ -106,7 +106,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         { name: 'nonce', type: 'uint256' },
         { name: 'levelName', type: 'string' },
         { name: 'monthName', type: 'string' },
-        { name: 'year', type: 'uint256' },
+        { name: 'yearValue', type: 'uint256' },
         { name: 'requestId', type: 'bytes32' }
       ]
     }
@@ -155,7 +155,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         nonce: currentNonce,
         levelName: request.levelName,
         monthName: request.monthName,
-        year: request.year,
+        yearValue: request.year,
         requestId: requestId
       }
 
