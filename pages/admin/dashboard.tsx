@@ -130,10 +130,11 @@ export default function AdminDashboard() {
             const entries: MediaEntry[] = LEVELS.map(level => {
               const existing = data.mediaStorage.find((m: any) => m.level_name === level)
               const ipfsCid = existing ? existing.ipfs_cid : ''
+              const gateway = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://ipfs.io/ipfs'
               return {
                 levelName: level,
                 ipfsCid,
-                previewUrl: ipfsCid ? `${process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://ipfs.io/ipfs'}/${ipfsCid}` : ''
+                previewUrl: ipfsCid ? `${gateway}/${ipfsCid}` : ''
               }
             })
             setMediaEntries(entries)
@@ -217,12 +218,13 @@ export default function AdminDashboard() {
   }
 
   const updateMediaEntry = (levelName: string, ipfsCid: string) => {
+    const gateway = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://ipfs.io/ipfs'
     setMediaEntries(prev => prev.map(entry => 
       entry.levelName === levelName 
         ? { 
             ...entry, 
             ipfsCid, 
-            previewUrl: ipfsCid ? `${process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://ipfs.io/ipfs'}/${ipfsCid}` : '' 
+            previewUrl: ipfsCid ? `${gateway}/${ipfsCid}` : '' 
           }
         : entry
     ))

@@ -498,16 +498,29 @@ export async function getCurrentMonthSetting(): Promise<CurrentMonthSetting | nu
 export async function setCurrentMonthSetting(monthName: string, year: number): Promise<CurrentMonthSetting> {
   await ensureSchema()
   
-  // Delete all existing records (we only keep one)
-  await sql`DELETE FROM current_month_settings`
+  // Check if a record exists
+  const existing = await sql`SELECT id FROM current_month_settings LIMIT 1`
   
-  // Insert new setting
-  const result = await sql`
-    INSERT INTO current_month_settings (month_name, year)
-    VALUES (${monthName}, ${year})
-    RETURNING *
-  `
-  return result[0] as CurrentMonthSetting
+  if (existing.length > 0) {
+    // Update existing record
+    const result = await sql`
+      UPDATE current_month_settings
+      SET month_name = ${monthName},
+          year = ${year},
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${existing[0].id}
+      RETURNING *
+    `
+    return result[0] as CurrentMonthSetting
+  } else {
+    // Insert new record
+    const result = await sql`
+      INSERT INTO current_month_settings (month_name, year)
+      VALUES (${monthName}, ${year})
+      RETURNING *
+    `
+    return result[0] as CurrentMonthSetting
+  }
 }
 
 // Media Storage Functions

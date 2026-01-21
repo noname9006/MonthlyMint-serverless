@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, useRef } from 'react'
 import Head from 'next/head'
+import { useRouter } from 'next/router'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount, useDisconnect } from 'wagmi'
 import { SBTMinter } from '@/components/SBTMinter'
@@ -28,6 +29,7 @@ const DISCORD_POPUP_CHECK_INTERVAL = 2000 // Check popup status every 2 seconds
 const DISCORD_POSTMESSAGE_DELAY = 500 // Wait 500ms for postMessage to complete
 
 export default function Home() {
+  const router = useRouter()
   const [discordUser, setDiscordUser] = useState<DiscordUser | null>(null)
   const [guildMember, setGuildMember] = useState<GuildMember | null>(null)
   const [highestRole, setHighestRole] = useState<{ id: string; name: RoleName } | null>(null)
@@ -337,7 +339,7 @@ export default function Home() {
                 {isAdmin && (
                   <div className="mt-3">
                     <button 
-                      onClick={() => window.location.href = '/admin/dashboard'} 
+                      onClick={() => router.push('/admin/dashboard')} 
                       className="btn-cyber w-full"
                     >
                       Admin Dashboard

@@ -16,8 +16,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const { mediaUpdates } = req.body
 
-  if (!Array.isArray(mediaUpdates) || mediaUpdates.length === 0) {
-    return res.status(400).json({ error: 'mediaUpdates array is required' })
+  if (!Array.isArray(mediaUpdates)) {
+    return res.status(400).json({ error: 'mediaUpdates must be an array' })
+  }
+
+  // Allow empty arrays - admin might want to clear all entries
+  if (mediaUpdates.length === 0) {
+    return res.json({
+      success: true,
+      updatedCount: 0
+    })
   }
 
   try {
