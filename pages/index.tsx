@@ -62,6 +62,30 @@ export default function Home() {
     }
   }
 
+  // Check mint status when wallet and Discord are connected
+  useEffect(() => {
+    if (isConnected && isDiscordVerified && discordUser && highestRole) {
+      fetch('/api/nft/check-mint-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          discordId: discordUser.id,
+          roleName: highestRole.name,
+        }),
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            setAlreadyMinted(data.alreadyMinted)
+            setHasLowerTierAvailable(data.hasLowerTierAvailable)
+          }
+        })
+        .catch(err => {
+          console.error('Failed to check mint status:', err)
+        })
+    }
+  }, [isConnected, isDiscordVerified, discordUser, highestRole])
+
   // Check admin status when Discord user changes
   useEffect(() => {
     if (discordUser) {
