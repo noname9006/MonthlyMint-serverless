@@ -1,12 +1,32 @@
 import { useState, useEffect } from 'react'
-import { useAccount, useWriteContract, useConfig } from 'wagmi'
-import { waitForTransactionReceipt } from 'wagmi/actions'
+import { useAccount, useWriteContract, useConfig, useReadContract } from 'wagmi'
+import { waitForTransactionReceipt, readContract } from 'wagmi/actions'
 import { SBT_ABI } from '@/lib/sbt-abi'
 import { chainConfig } from '@/lib/chains'
-import { getMediaURI, ipfsToGateway } from '@/lib/media-config'
 
-// Single NFT contract address for all roles
-const NFT_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS || ''
+// Role-specific contract configurations
+// Each role has its own dedicated NFT contract
+// Media URIs are now fetched from the contracts themselves
+const ROLE_CONTRACTS: Record<string, { contractAddress: string }> = {
+  'Botanist': {
+    contractAddress: process.env.NEXT_PUBLIC_BOTANIST_CONTRACT_ADDRESS || '',
+  },
+  'Hyperion Ambassador': {
+    contractAddress: process.env.NEXT_PUBLIC_HYPERION_CONTRACT_ADDRESS || '',
+  },
+  'Sequoia Ambassador': {
+    contractAddress: process.env.NEXT_PUBLIC_SEQUOIA_CONTRACT_ADDRESS || '',
+  },
+  'Blossom Ambassador': {
+    contractAddress: process.env.NEXT_PUBLIC_BLOSSOM_CONTRACT_ADDRESS || '',
+  },
+  'Seedling Ambassador': {
+    contractAddress: process.env.NEXT_PUBLIC_SEEDLING_CONTRACT_ADDRESS || '',
+  },
+  'Sprout': {
+    contractAddress: process.env.NEXT_PUBLIC_SPROUT_CONTRACT_ADDRESS || '',
+  },
+}
 
 interface SBTMinterProps {
   discordId: string
@@ -53,14 +73,6 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
   // Map transaction hashes to tier names to track multiple simultaneous mints
   const [txHashToTierName, setTxHashToTierName] = useState<Record<string, string>>({})
   
-  // Current month/year state
-  const [currentMonth, setCurrentMonth] = useState<{ monthName: string; year: number } | null>(null)
-  const [isLoadingMonth, setIsLoadingMonth] = useState(true)
-  
-  // Media URI state - fetch from database
-  const [mediaURI, setMediaURI] = useState<string | null>(null)
-  const [isLoadingMedia, setIsLoadingMedia] = useState(false)
-  
   // Combine prop and local state to determine if minted
   const isMinted = alreadyMinted || localMinted
   
@@ -68,22 +80,46 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
   const metadata = 'student'
   const credentialType = 'Education'
   const issuerName = 'Botanix'
+  const level = 1
 
   // Check if rendering in main page or modal context
   const isMainPage = sectionNumber > 0
 
-  // Check if contract address is configured
-  if (!NFT_CONTRACT_ADDRESS) {
+  // Get role-specific contract
+  const roleConfig = ROLE_CONTRACTS[roleName]
+  const contractAddress = roleConfig?.contractAddress
+  
+  // Read the default media URI from the contract
+  const { data: contractMediaURI, isLoading: isLoadingMediaURI } = useReadContract({
+    address: contractAddress as `0x${string}`,
+    abi: SBT_ABI,
+    functionName: 'baseURI',
+    query: {
+      enabled: !!contractAddress,
+    },
+  })
+  
+  // Use fetched media URI or fallback to empty string
+  const mediaURI = (contractMediaURI as string) || ''
+  
+  // Convert IPFS URI to gateway URL for display
+  const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://ipfs.io/ipfs'
+  const mediaGatewayURL = mediaURI.startsWith('ipfs://') 
+    ? `${IPFS_GATEWAY}/${mediaURI.replace('ipfs://', '')}`
+    : mediaURI
+
+  // Check if contract address is configured for this role
+  if (!contractAddress) {
     return (
       <div className={isMainPage ? 'card-cyber p-6 mt-8' : ''}>
         {isMainPage && (
           <div className="flex items-center justify-between gap-2 mb-4">
-            <h2 className="text-2xl font-bold font-proxima text-text-primary uppercase">{sectionNumber}. Mint your NFT</h2>
+            <h2 className="text-2xl font-bold font-proxima text-text-primary uppercase">{sectionNumber}. Mint your SBT</h2>
             <span className="badge-cyber text-text-secondary">Not Configured</span>
           </div>
         )}
         <p className="text-error text-sm">
-          NFT contract is not configured. Please set NEXT_PUBLIC_NFT_CONTRACT_ADDRESS in your environment variables.
+          NFT contract for role "{roleName}" is not configured. Please set the appropriate contract address in your environment variables.
         </p>
       </div>
     )
@@ -91,89 +127,35 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
 
   const { writeContractAsync: mintWithSignatureAsync, reset: resetWriteContract } = useWriteContract()
 
-  // Fetch current month on component mount
-  useEffect(() => {
-    fetchCurrentMonth()
-  }, [])
-
-  const fetchCurrentMonth = async () => {
+  // Helper function to fetch media URI from a contract
+  const fetchMediaURIFromContract = async (contractAddr: string): Promise<string> => {
     try {
-      setIsLoadingMonth(true)
-      const response = await fetch('/api/admin/set-current-month', {
-        method: 'GET',
+      const result = await readContract(config, {
+        address: contractAddr as `0x${string}`,
+        abi: SBT_ABI,
+        functionName: 'baseURI',
       })
-      
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success && data.currentMonth) {
-          setCurrentMonth(data.currentMonth)
-        }
-      }
-    } catch (err) {
-      console.error('Failed to fetch current month:', err)
-    } finally {
-      setIsLoadingMonth(false)
+      return result as string
+    } catch (error) {
+      console.error(`Failed to fetch media URI from contract ${contractAddr}:`, error)
+      return ''
     }
   }
 
-  // Fetch media from database when current month and role are available
-  useEffect(() => {
-    if (currentMonth && roleName) {
-      fetchMediaFromDatabase(roleName, currentMonth.year, currentMonth.monthName)
+  // Helper function to fetch and validate media URI
+  const fetchAndValidateMediaURI = async (contractAddr: string, errorSetter: (error: string) => void): Promise<string | null> => {
+    const mediaUri = await fetchMediaURIFromContract(contractAddr)
+    
+    if (!mediaUri) {
+      errorSetter('Failed to fetch media URI from contract')
+      return null
     }
-  }, [currentMonth, roleName])
-
-  const fetchMediaFromDatabase = async (level: string, year: number, month: string) => {
-    try {
-      setIsLoadingMedia(true)
-      const response = await fetch('/api/nft/get-media', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          levelName: level,
-          year: year,
-          monthName: month,
-        }),
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success && data.ipfsCid) {
-          // Convert CID to ipfs:// URI
-          const ipfsUri = cidToIpfsUri(data.ipfsCid)
-          setMediaURI(ipfsUri)
-        } else {
-          // Try fallback to environment variables
-          const envMediaURI = getMediaURI(level, year, month)
-          setMediaURI(envMediaURI)
-        }
-      } else {
-        // Fallback to environment variables
-        const envMediaURI = getMediaURI(level, year, month)
-        setMediaURI(envMediaURI)
-      }
-    } catch (err) {
-      console.error('Failed to fetch media from database:', err)
-      // Fallback to environment variables
-      const envMediaURI = getMediaURI(level, year, month)
-      setMediaURI(envMediaURI)
-    } finally {
-      setIsLoadingMedia(false)
-    }
-  }
-
-  // Convert media URI to gateway URL for display
-  const mediaGatewayURL = mediaURI ? ipfsToGateway(mediaURI) : null
-
-  // Helper function to convert CID to ipfs:// URI
-  const cidToIpfsUri = (cid: string): string => {
-    if (!cid) return ''
-    if (cid.startsWith('ipfs://')) return cid
-    return `ipfs://${cid}`
+    
+    return mediaUri
   }
 
   // Helper function to wait for transaction and log the mint
-  const waitForTransactionAndLog = async (txHash: `0x${string}`, tierName: string, tierMediaURI: string, tierMonthName: string, tierYear: number) => {
+  const waitForTransactionAndLog = async (txHash: `0x${string}`, tierName: string) => {
     // Check if this transaction is already being logged (deduplication)
     if (loggingInProgress.has(txHash)) {
       console.log(`Transaction ${txHash} is already being logged, skipping duplicate request`)
@@ -193,6 +175,29 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
         hash: txHash,
       })
 
+      // Determine tier configuration
+      const tierConfig = ROLE_CONTRACTS[tierName]
+      if (!tierConfig) {
+        console.error('No tier config found for logging')
+        // Update state to show error for lower-tier mints
+        if (tierName !== roleName) {
+          setLowerTierMintStates(prev => ({
+            ...prev,
+            [tierName]: { status: 'unminted', error: 'Configuration error' }
+          }))
+        }
+        // Remove from loggingInProgress on error
+        setLoggingInProgress(prev => {
+          const newSet = new Set(prev)
+          newSet.delete(txHash)
+          return newSet
+        })
+        return
+      }
+
+      // Fetch media URI from contract
+      const tierMediaURI = await fetchMediaURIFromContract(tierConfig.contractAddress)
+
       // Call the log-mint API
       const response = await fetch('/api/nft/log-mint', {
         method: 'POST',
@@ -200,15 +205,13 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
         body: JSON.stringify({
           discordId: discordId,
           walletAddress: address,
-          contractAddress: NFT_CONTRACT_ADDRESS,
+          contractAddress: tierConfig.contractAddress,
           transactionHash: txHash,
           roleName: tierName,
           credentialType: credentialType,
           metadata: metadata,
           mediaUri: tierMediaURI,
-          levelName: tierName,
-          monthName: tierMonthName,
-          year: tierYear,
+          level: level,
         }),
       })
 
@@ -304,22 +307,20 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
       return
     }
 
-    if (!currentMonth) {
-      setError('Current month not loaded')
-      return
-    }
-
-    if (!mediaURI) {
-      setError('Media URI not available for current month')
-      return
-    }
-
     setLoading(true)
     setError(null)
     setSuccess(null)
     resetWriteContract() // Reset previous transaction state
     
     try {
+      // Fetch and validate media URI from contract
+      const currentMediaURI = await fetchAndValidateMediaURI(contractAddress, setError)
+      
+      if (!currentMediaURI) {
+        setLoading(false)
+        return
+      }
+      
       // First, get the signature
       const response = await fetch('/api/nft/generate-mint-signature', {
         method: 'POST',
@@ -327,15 +328,13 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
         body: JSON.stringify({
           userWalletAddress: address,
           metadata: metadata,
-          mediaURI: mediaURI,
+          mediaURI: currentMediaURI,
           credentialType: credentialType,
           issuerName: issuerName,
+          level: level,
           discordId: discordId,
           roleName: roleName,
-          contractAddress: NFT_CONTRACT_ADDRESS,
-          levelName: roleName,
-          monthName: currentMonth.monthName,
-          year: currentMonth.year,
+          contractAddress: contractAddress,
         }),
       })
 
@@ -344,11 +343,11 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
         
         // Handle specific error codes
         if (errorData.code === 'ALREADY_MINTED_ROLE') {
-          setError(`You have already minted an NFT for the ${roleName} role`)
+          setError(`You have already minted an SBT for the ${roleName} role`)
         } else if (errorData.code === 'ALREADY_MINTED_CONTRACT') {
-          setError('You have already minted an NFT from this contract')
+          setError('You have already minted an SBT from this contract')
         } else if (errorData.code === 'MAX_MINTS_EXCEEDED') {
-          setError('You have reached the maximum number of NFT mints')
+          setError('You have reached the maximum number of SBT mints')
         } else if (errorData.code === 'PENDING_MINT') {
           setError('You already have a pending mint for this role. Please wait...')
         } else {
@@ -360,24 +359,20 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
       const data = await response.json()
       const signature = data.signature
       const nonce = data.nonce
-      const requestId = data.requestId
 
       // Then, mint with the signature and capture the transaction hash
       const txHash = await mintWithSignatureAsync({
-        address: NFT_CONTRACT_ADDRESS as `0x${string}`,
+        address: contractAddress as `0x${string}`,
         abi: SBT_ABI,
         functionName: 'mintWithSignature',
         args: [
           address,
           metadata,
-          mediaURI,
+          currentMediaURI,
           credentialType,
           issuerName,
           BigInt(nonce),
-          roleName,
-          currentMonth.monthName,
-          BigInt(currentMonth.year),
-          requestId as `0x${string}`,
+          BigInt(level),
           signature as `0x${string}`,
         ],
       })
@@ -390,11 +385,11 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
       }))
       
       // Wait for transaction and log it (don't await - let it run in background)
-      waitForTransactionAndLog(txHash, roleName, mediaURI, currentMonth.monthName, currentMonth.year).catch((err) => {
+      waitForTransactionAndLog(txHash, roleName).catch((err) => {
         console.error('Unhandled error in waitForTransactionAndLog:', err)
       })
     } catch (err) {
-      setError('Failed to mint NFT')
+      setError('Failed to mint SBT')
       console.error(err)
       setPendingTxHash(null)
     } finally {
@@ -425,7 +420,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
     }
   }
 
-  // Handle minting of a specific lower-tier NFT
+  // Handle minting of a specific lower-tier SBT
   const handleLowerTierMint = async (tierName: string) => {
     if (!address) {
       setLowerTierMintStates(prev => ({
@@ -435,10 +430,12 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
       return
     }
 
-    if (!currentMonth) {
+    const tierRoleConfig = ROLE_CONTRACTS[tierName]
+    
+    if (!tierRoleConfig || !tierRoleConfig.contractAddress) {
       setLowerTierMintStates(prev => ({
         ...prev,
-        [tierName]: { status: 'unminted', error: 'Current month not loaded' }
+        [tierName]: { status: 'unminted', error: `Contract not configured for ${tierName}` }
       }))
       return
     }
@@ -450,40 +447,21 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
     }))
 
     try {
-      // Fetch media URI for the lower tier from database
-      const mediaResponse = await fetch('/api/nft/get-media', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          levelName: tierName,
-          year: currentMonth.year,
-          monthName: currentMonth.monthName,
-        }),
-      })
-      
-      let tierMediaURI: string | null = null
-      
-      if (mediaResponse.ok) {
-        const mediaData = await mediaResponse.json()
-        if (mediaData.success && mediaData.ipfsCid) {
-          // Convert CID to ipfs:// URI
-          tierMediaURI = cidToIpfsUri(mediaData.ipfsCid)
+      // Fetch and validate media URI from tier contract
+      const tierMediaURI = await fetchAndValidateMediaURI(
+        tierRoleConfig.contractAddress,
+        (error) => {
+          setLowerTierMintStates(prev => ({
+            ...prev,
+            [tierName]: { status: 'unminted', error }
+          }))
         }
-      }
-      
-      // Fallback to environment variables if database fetch failed
-      if (!tierMediaURI) {
-        tierMediaURI = getMediaURI(tierName, currentMonth.year, currentMonth.monthName)
-      }
+      )
       
       if (!tierMediaURI) {
-        setLowerTierMintStates(prev => ({
-          ...prev,
-          [tierName]: { status: 'unminted', error: `Media not available for ${tierName}` }
-        }))
         return
       }
-
+      
       // Get the signature
       const response = await fetch('/api/nft/generate-mint-signature', {
         method: 'POST',
@@ -494,12 +472,10 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
           mediaURI: tierMediaURI,
           credentialType: credentialType,
           issuerName: issuerName,
+          level: level,
           discordId: discordId,
           roleName: tierName,
-          contractAddress: NFT_CONTRACT_ADDRESS,
-          levelName: tierName,
-          monthName: currentMonth.monthName,
-          year: currentMonth.year,
+          contractAddress: tierRoleConfig.contractAddress,
         }),
       })
 
@@ -530,11 +506,10 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
       const data = await response.json()
       const signature = data.signature
       const nonce = data.nonce
-      const requestId = data.requestId
 
       // Mint with the signature and capture the transaction hash
       const txHash = await mintWithSignatureAsync({
-        address: NFT_CONTRACT_ADDRESS as `0x${string}`,
+        address: tierRoleConfig.contractAddress as `0x${string}`,
         abi: SBT_ABI,
         functionName: 'mintWithSignature',
         args: [
@@ -544,10 +519,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
           credentialType,
           issuerName,
           BigInt(nonce),
-          tierName,
-          currentMonth.monthName,
-          BigInt(currentMonth.year),
-          requestId as `0x${string}`,
+          BigInt(level),
           signature as `0x${string}`,
         ],
       })
@@ -559,7 +531,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
       }))
       
       // Wait for transaction and log it (don't await - let it run in background)
-      waitForTransactionAndLog(txHash, tierName, tierMediaURI, currentMonth.monthName, currentMonth.year).catch((err) => {
+      waitForTransactionAndLog(txHash, tierName).catch((err) => {
         console.error('Unhandled error in waitForTransactionAndLog:', err)
       })
     } catch (err) {
@@ -572,26 +544,26 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
   }
 
   // Computed variables for better readability
-  const isMintButtonDisabled = isMinted || loading || !address || !!pendingTxHash || isLoadingMonth || isLoadingMedia || !mediaURI
+  const isMintButtonDisabled = isMinted || loading || !address || !!pendingTxHash || isLoadingMediaURI
 
   return(
     <div className={isMainPage ? 'card-cyber p-6 mt-8' : ''}>
       {isMainPage && (
         <div className="flex items-center justify-between gap-2 mb-4">
-          <h2 className="text-2xl font-bold font-proxima text-text-primary uppercase">{sectionNumber}. Mint your NFT</h2>
+          <h2 className="text-2xl font-bold font-proxima text-text-primary uppercase">{sectionNumber}. Mint your SBT</h2>
           <span className={`badge-cyber ${address ? 'text-accent' : 'text-text-secondary'}`}>
             {address ? 'Ready' : 'Locked'}
           </span>
         </div>
       )}
-      {isMainPage && <p className="text-text-secondary mb-4">Your NFT is minted from the Botanix contract. Media is managed per month and role.</p>}
+      {isMainPage && <p className="text-text-secondary mb-4">Your NFT is minted from a role-specific contract. The media is dynamically fetched from the contract.</p>}
 
       <div className="flex gap-5 flex-wrap mt-4">
         <div className="flex-1 min-w-[300px]">
           {/* Show transaction success link above button when just minted (in current session only) */}
           {!alreadyMinted && localMinted && pendingTxHash && (
             <div className="mb-4 card-cyber p-3">
-              <p className="text-success font-bold mb-2">✓ NFT minted successfully!</p>
+              <p className="text-success font-bold mb-2">✓ SBT minted successfully!</p>
               <a 
                 href={`${chainConfig.explorerUrl}/tx/${pendingTxHash}`}
                 target="_blank"
@@ -609,7 +581,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
               disabled={isMintButtonDisabled}
               className="btn-cyber w-full"
             >
-              {isLoadingMonth || isLoadingMedia ? 'Loading...' : loading ? 'Minting...' : pendingTxHash ? 'Minting...' : isMinted ? 'Minted, see you next month!' : 'Mint your NFT (Freemint)'}
+              {isLoadingMediaURI ? 'Loading media...' : loading ? 'Minting...' : pendingTxHash ? 'Minting...' : isMinted ? 'Minted, see you next month!' : 'Mint your SBT (Freemint)'}
             </button>
           </div>
 
@@ -623,7 +595,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
                 }}
                 className="block text-accent underline font-medium text-sm text-center hover:text-accent-neon transition-colors uppercase tracking-wide"
               >
-                Meanwhile, you can mint lower-tier NFTs to complete your collection
+                Meanwhile, you can mint lower-tier SBTs to complete your collection
               </a>
               
               {showLowerTiers && (
@@ -688,7 +660,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
 
         <div className="flex-1 min-w-[300px]">
           <div className="card-cyber p-4 flex justify-center items-center">
-            {isLoadingMonth || isLoadingMedia ? (
+            {isLoadingMediaURI ? (
               <div className="max-w-full max-h-96 flex items-center justify-center">
                 <p className="text-text-secondary">Loading media...</p>
               </div>

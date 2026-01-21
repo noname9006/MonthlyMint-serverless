@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { getUserByDiscordId, logNftMint, getMintByTxHash } from '@/lib/db'
+import { getUserByDiscordId, logSbtMint, getMintByTxHash } from '@/lib/db'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -17,10 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       credentialType,
       metadata,
       mediaUri,
-      levelName,
-      monthName,
-      year,
-      requestId,
+      level,
     } = req.body
 
     // Validate required fields
@@ -47,7 +44,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Log the mint event - now returns status
-    const result = await logNftMint({
+    const result = await logSbtMint({
       discord_id: discordId,
       user_id: user.id,
       wallet_address: walletAddress,
@@ -58,10 +55,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       credential_type: credentialType,
       metadata: metadata,
       media_uri: mediaUri,
-      level_name: levelName,
-      month_name: monthName,
-      year: year,
-      request_id: requestId,
+      level: level,
     })
 
     if (!result.success) {

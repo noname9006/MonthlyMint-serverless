@@ -50,8 +50,8 @@ CREATE TABLE IF NOT EXISTS discord_wallet_connections (
   UNIQUE (discord_id, evm_address)
 );
 
--- NFT mint events
-CREATE TABLE IF NOT EXISTS nft_mint_events (
+-- SBT (Soulbound Token) mint events
+CREATE TABLE IF NOT EXISTS sbt_mint_events (
   id SERIAL PRIMARY KEY,
   discord_id TEXT NOT NULL,
   user_id INTEGER NOT NULL REFERENCES users(id),
@@ -73,7 +73,7 @@ CREATE INDEX IF NOT EXISTS idx_discord_auth_logs_discord_id ON discord_auth_logs
 CREATE INDEX IF NOT EXISTS idx_wallet_connect_logs_discord_id ON wallet_connect_logs(discord_id);
 CREATE INDEX IF NOT EXISTS idx_discord_wallet_connections_discord_id ON discord_wallet_connections(discord_id);
 CREATE INDEX IF NOT EXISTS idx_discord_wallet_connections_active ON discord_wallet_connections(discord_id, is_active);
-CREATE INDEX IF NOT EXISTS idx_nft_mint_events_discord_id ON nft_mint_events(discord_id);
-CREATE INDEX IF NOT EXISTS idx_nft_mint_events_tx_hash ON nft_mint_events(transaction_hash);
-CREATE INDEX IF NOT EXISTS idx_nft_mint_events_wallet ON nft_mint_events(wallet_address);
-CREATE INDEX IF NOT EXISTS idx_nft_mint_events_contract ON nft_mint_events(contract_address);
+CREATE INDEX IF NOT EXISTS idx_sbt_mint_events_discord_id ON sbt_mint_events(discord_id);
+CREATE INDEX IF NOT EXISTS idx_sbt_mint_events_tx_hash ON sbt_mint_events(transaction_hash);
+CREATE INDEX IF NOT EXISTS idx_sbt_mint_events_wallet ON sbt_mint_events(wallet_address);
+CREATE INDEX IF NOT EXISTS idx_sbt_mint_events_contract ON sbt_mint_events(contract_address);
