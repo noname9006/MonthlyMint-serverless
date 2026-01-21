@@ -15,10 +15,10 @@ A Next.js web application that enables Discord-gated NFT minting on the Botanix 
 - **Botanix Network** - Native support for Botanix blockchain
 - **NFT (ERC721 Transferable Token) Minting** - Transferable NFTs with metadata
 - **Single Unified Contract** - One contract for all roles and levels
-- **Environment-Based Media** - Media URIs configured via environment variables for each level/year/month
+- **Admin-Managed Media** - Media URIs managed via admin dashboard for each level/year/month
 - **EIP-712 Signature Standard** - Secure backend-signed transactions using typed structured data
 - **Batch Minting Support** - Mint multiple NFTs in a single transaction
-- **Admin-Managed Minting** - Current month controlled via admin endpoint
+- **Admin-Managed Minting** - Current month controlled via Discord-authorized admin dashboard
 - **Serverless Architecture** - Runs on Vercel with Neon Postgres for data persistence
 - **Discord-Wallet Connections** - Link Discord accounts to wallet addresses and track minted NFTs
 
@@ -123,10 +123,11 @@ This application is optimized for deployment on Vercel's serverless infrastructu
      NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID
      NEXT_PUBLIC_NETWORK_ID
      NEXT_PUBLIC_NFT_CONTRACT_ADDRESS (single unified contract)
-     ADMIN_SECRET (for managing current month)
      BACKEND_PRIVATE_KEY
-     Media URI environment variables (e.g., NEXT_PUBLIC_BOTANIST_2025_JAN)
+     ADMIN1_USERID, ADMIN2_USERID, etc. (Discord user IDs for admin access)
+     NEXT_PUBLIC_IPFS_GATEWAY (optional, defaults to https://ipfs.io/ipfs)
      ```
+   - **Note:** Media URIs are managed via the admin dashboard, not environment variables
 
 5. **Update Discord OAuth Redirect URI:**
    - Go to [Discord Developer Portal](https://discord.com/developers/applications)
@@ -225,27 +226,24 @@ NEXT_PUBLIC_NFT_CONTRACT_ADDRESS=your_nft_contract_address_here
 ```
 
 ### NFT Media Configuration
-Media URIs are configured via environment variables for each level/year/month combination:
-```env
-# Format: NEXT_PUBLIC_{LEVEL}_{YEAR}_{MONTH}
-# Examples:
-NEXT_PUBLIC_BOTANIST_2025_JAN=ipfs://your_botanist_january_2025_media_uri
-NEXT_PUBLIC_BOTANIST_2025_FEB=ipfs://your_botanist_february_2025_media_uri
-NEXT_PUBLIC_HYPERION_2025_JAN=ipfs://your_hyperion_january_2025_media_uri
-NEXT_PUBLIC_SEQUOIA_2025_JAN=ipfs://your_sequoia_january_2025_media_uri
-NEXT_PUBLIC_BLOSSOM_2025_JAN=ipfs://your_blossom_january_2025_media_uri
-NEXT_PUBLIC_SEEDLING_2025_JAN=ipfs://your_seedling_january_2025_media_uri
-NEXT_PUBLIC_SPROUT_2025_JAN=ipfs://your_sprout_january_2025_media_uri
-# Add more as needed for different months and years
-```
+Media URIs are managed via the admin dashboard and stored in the database. Admins can upload and configure media for each role/level, year, and month combination through the admin interface accessible at `/admin/dashboard`.
+
+**Note:** Environment variable-based media configuration is deprecated. Use the admin dashboard for media management.
 
 ### Backend Configuration
 ```env
 # Private key for signing mint approvals (keep secure, never expose!)
 BACKEND_PRIVATE_KEY=your_backend_wallet_private_key_here
+```
 
-# Admin secret for managing current month (keep secure!)
-ADMIN_SECRET=your_admin_secret_here
+### Admin Configuration
+Admins are identified by their Discord user IDs:
+```env
+# Admin Users (Discord User IDs)
+ADMIN1_USERID=your_discord_user_id_here
+ADMIN2_USERID=another_discord_user_id_here
+# ADMIN3_USERID=
+# Add more as needed
 ```
 
 ## NFT Integration
@@ -255,16 +253,19 @@ The application includes a complete NFT minting system using the BotanistTokenEI
 ### Architecture
 - **Single Unified Contract** - One BotanistTokenEIP712 contract handles all roles and levels
 - **Role-Based Access** - Discord roles (Botanist, Hyperion Ambassador, Sequoia Ambassador, Blossom Ambassador, Seedling Ambassador, Sprout) determine minting eligibility
-- **Environment-Based Media** - Media URIs configured via environment variables for each level/year/month combination
+- **Admin-Managed Media** - Media URIs managed via Discord-authorized admin dashboard for each level/year/month combination
 - **EIP-712 Signatures** - Backend signs minting requests using typed structured data standard
 - **Batch Minting** - Support for minting multiple NFTs in a single transaction
-- **Admin-Controlled Minting** - Current month managed via secure admin endpoint
+- **Admin-Controlled Minting** - Current month managed via Discord-authorized admin dashboard
 
 ### Components
-- **NFTMinter Component** - React component that handles NFT minting with EIP-712 signature verification
+- **SBTMinter Component** - React component that handles NFT minting with EIP-712 signature verification
+- **Admin Dashboard** - Discord-authorized admin panel at `/admin/dashboard` for media and month management
 - **API Routes**:
   - `/api/nft/generate-mint-signature` - Generates EIP-712 signature for minting
   - `/api/admin/set-current-month` - Admin endpoint to update the current mintable month
+  - `/api/admin/update-media-storage` - Admin endpoint to manage media URIs
+  - `/api/admin/get-media-storage` - Admin endpoint to retrieve media URIs
 - **Smart Contract** - BotanistTokenEIP712 contract in `/NFT/BotanistTokenEIP712.sol`
 
 ### Configuration
@@ -295,20 +296,17 @@ NEXT_PUBLIC_NFT_CONTRACT_ADDRESS=your_nft_contract_address_here
 # Private key of the wallet used to sign mint approvals (keep this secure!)
 BACKEND_PRIVATE_KEY=your_backend_wallet_private_key_here
 
-# Admin Secret
-# Secret for managing current month (keep this secure!)
-ADMIN_SECRET=your_admin_secret_here
+# Admin Configuration
+# Discord user IDs for admin access
+ADMIN1_USERID=your_discord_user_id_here
+ADMIN2_USERID=another_discord_user_id_here
+# Add more as needed
 
-# Media URIs for each level/year/month
-# Format: NEXT_PUBLIC_{LEVEL}_{YEAR}_{MONTH}
-NEXT_PUBLIC_BOTANIST_2025_JAN=ipfs://your_botanist_january_2025_media_uri
-NEXT_PUBLIC_HYPERION_2025_JAN=ipfs://your_hyperion_january_2025_media_uri
-NEXT_PUBLIC_SEQUOIA_2025_JAN=ipfs://your_sequoia_january_2025_media_uri
-NEXT_PUBLIC_BLOSSOM_2025_JAN=ipfs://your_blossom_january_2025_media_uri
-NEXT_PUBLIC_SEEDLING_2025_JAN=ipfs://your_seedling_january_2025_media_uri
-NEXT_PUBLIC_SPROUT_2025_JAN=ipfs://your_sprout_january_2025_media_uri
-# Add more for different months and years as needed
+# IPFS Gateway (optional)
+NEXT_PUBLIC_IPFS_GATEWAY=https://ipfs.io/ipfs
 ```
+
+**Note:** Media URIs are managed via the admin dashboard, not environment variables.
 
 ### Contract Deployment
 
@@ -356,19 +354,28 @@ await contract.batchMint(
 )
 ```
 
-### Admin Endpoint: Set Current Month
+### Admin Dashboard
 
-The admin endpoint allows authorized users to update the current mintable month:
+The admin dashboard allows Discord-authorized administrators to manage the minting system:
 
-**Endpoint:** `POST /api/admin/set-current-month`
+**Access:** Navigate to `/admin/dashboard` after signing in with Discord (requires Discord user ID to be listed in ADMIN1_USERID, ADMIN2_USERID, etc.)
 
-**Headers:**
+**Features:**
+- Set current mintable month and year
+- Upload and manage media URIs for each role/level combination
+- View media configuration by month and year
+
+**API Endpoints:**
+
+**Set Current Month:** `POST /api/admin/set-current-month`
+
+Headers:
 ```
 Content-Type: application/json
-x-admin-secret: YOUR_ADMIN_SECRET
+x-discord-user-id: YOUR_DISCORD_USER_ID
 ```
 
-**Body:**
+Body:
 ```json
 {
   "month": "February",
@@ -376,22 +383,35 @@ x-admin-secret: YOUR_ADMIN_SECRET
 }
 ```
 
-**Response:**
+**Update Media Storage:** `POST /api/admin/update-media-storage`
+
+Headers:
+```
+Content-Type: application/json
+x-discord-user-id: YOUR_DISCORD_USER_ID
+```
+
+Body:
 ```json
 {
-  "success": true,
-  "currentMonth": "February",
-  "currentYear": 2025
+  "mediaUpdates": [
+    {
+      "levelName": "Botanist",
+      "year": 2025,
+      "monthName": "January",
+      "ipfsCid": "QmYourIPFSHashHere"
+    }
+  ]
 }
 ```
 
-This ensures users can only mint NFTs for the currently active month as configured by administrators.
+This ensures users can only mint NFTs for the currently active month as configured by Discord-authorized administrators.
 
 ### Usage Flow
 
 1. User verifies Discord membership and role is detected
 2. User connects wallet to Botanix network
-3. Frontend determines the appropriate media URI from environment variables based on user's role, current year, and month
+3. Frontend fetches the appropriate media URI from the database based on user's role, current year, and month (with fallback to environment variables)
 4. User initiates minting with level name, month name, year, and unique request ID
 5. Backend generates EIP-712 signature with the provided parameters
 6. User mints NFT from the unified contract with the signature
