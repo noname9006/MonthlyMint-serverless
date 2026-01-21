@@ -310,22 +310,39 @@ NEXT_PUBLIC_IPFS_GATEWAY=https://ipfs.io/ipfs
 
 ### Contract Deployment
 
-The BotanistTokenEIP712 contract uses the following constructor:
+The BotanixAmbassadorNFT contract uses the following constructor:
 ```solidity
 constructor(
-  address _signerAddress,    // Backend wallet address that signs mint approvals
-  string memory _baseURI     // Base URI for metadata (e.g., "https://your-api.com/metadata/")
+  address _signerAddress    // Backend wallet address that signs mint approvals
 )
 ```
 
 Example deployment:
 ```javascript
-// Deploy single unified contract
-const contract = await deploy("BotanistTokenEIP712", [
-  backendWalletAddress,
-  "https://your-api.com/metadata/"
+// Deploy the contract
+const contract = await deploy("BotanixAmbassadorNFT", [
+  backendWalletAddress
 ])
 ```
+
+### ⚠️ Important: Tier Configuration Required
+
+**After deploying the contract, you MUST configure tiers before users can mint.**
+
+The contract uses a tier system to control which NFTs can be minted. Each tier is defined by:
+- **levelName**: Discord role (e.g., "Botanist")
+- **yearValue**: Year (e.g., 2026)
+- **monthName**: Month (e.g., "January")
+
+**Tiers must be configured and set to active** before minting is possible. If not configured, minting will fail with an "INACTIVE" error.
+
+**Quick Setup:**
+```bash
+# Configure all tiers for current and next year
+npm run configure-tiers
+```
+
+📖 **For detailed instructions, see [NFT/TIER_CONFIGURATION.md](NFT/TIER_CONFIGURATION.md)**
 
 ### Minting Parameters
 
@@ -485,6 +502,19 @@ If you're familiar with the Vercel KV (Redis) version:
 The API interface remains the same - only the storage backend has changed.
 
 ## Troubleshooting
+
+### Error: "Fail with INACTIVE" During NFT Minting
+
+**Cause:** The tier (levelName, yearValue, monthName combination) has not been configured in the smart contract or is set to `active: false`.
+
+**Solution:** 
+1. Run the tier configuration script:
+   ```bash
+   npm run configure-tiers
+   ```
+2. Or manually configure tiers using the contract's `configureTier()` function
+
+📖 **See [NFT/TIER_CONFIGURATION.md](NFT/TIER_CONFIGURATION.md) for detailed instructions**
 
 ### Error: "DATABASE_URL environment variable is not set"
 
