@@ -36,7 +36,12 @@ export BACKEND_PRIVATE_KEY=0x...
 export NEXT_PUBLIC_NFT_CONTRACT_ADDRESS=0x...
 
 # Run the configuration script
-npx ts-node scripts/configure-tiers.ts
+npm run configure-tiers
+```
+
+Or if you need to override environment variables:
+```bash
+BACKEND_PRIVATE_KEY=0x... NEXT_PUBLIC_NFT_CONTRACT_ADDRESS=0x... npm run configure-tiers
 ```
 
 The script will:
@@ -184,7 +189,7 @@ For a typical deployment:
 # (with your signer address as constructor parameter)
 
 # 2. Configure all tiers for current and next year
-npx ts-node scripts/configure-tiers.ts
+npm run configure-tiers
 
 # 3. Verify tiers are active
 # Check getTierInfo() for your desired tiers

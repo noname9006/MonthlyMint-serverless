@@ -339,7 +339,7 @@ The contract uses a tier system to control which NFTs can be minted. Each tier i
 **Quick Setup:**
 ```bash
 # Configure all tiers for current and next year
-npx ts-node scripts/configure-tiers.ts
+npm run configure-tiers
 ```
 
 📖 **For detailed instructions, see [NFT/TIER_CONFIGURATION.md](NFT/TIER_CONFIGURATION.md)**
@@ -510,7 +510,7 @@ The API interface remains the same - only the storage backend has changed.
 **Solution:** 
 1. Run the tier configuration script:
    ```bash
-   npx ts-node scripts/configure-tiers.ts
+   npm run configure-tiers
    ```
 2. Or manually configure tiers using the contract's `configureTier()` function
 
