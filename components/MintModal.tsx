@@ -8,13 +8,15 @@ interface MintModalProps {
 
 export function MintModal({ isOpen, onClose, children }: MintModalProps) {
   const modalRef = useRef<HTMLDivElement>(null)
+  const backdropRef = useRef<HTMLDivElement>(null)
 
   // Handle click outside modal to close
   useEffect(() => {
     if (!isOpen) return
 
     const handleClickOutside = (event: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+      // Check if click is on the backdrop (not on the modal content)
+      if (backdropRef.current && event.target === backdropRef.current) {
         onClose()
       }
     }
@@ -41,21 +43,28 @@ export function MintModal({ isOpen, onClose, children }: MintModalProps) {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 backdrop-blur-sm">
+    <div ref={backdropRef} className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black bg-opacity-75 backdrop-blur-sm"></div>
+      
+      {/* Modal content */}
       <div 
         ref={modalRef}
-        className="relative max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto card-cyber p-8"
+        className="relative max-w-2xl w-full mx-4 max-h-[85vh] bg-background card-cyber p-8 overflow-hidden flex flex-col z-10"
       >
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-text-secondary hover:text-accent transition-colors text-2xl font-bold"
+          className="absolute top-4 right-4 text-text-secondary hover:text-accent transition-colors text-2xl font-bold z-10"
           aria-label="Close modal"
         >
           ×
         </button>
         
-        {children}
+        {/* Scrollable content area */}
+        <div className="overflow-y-auto pr-2" style={{ maxHeight: 'calc(85vh - 4rem)' }}>
+          {children}
+        </div>
       </div>
     </div>
   )

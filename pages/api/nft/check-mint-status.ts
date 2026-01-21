@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { hasUserMintedForRole, getUserMints } from '@/lib/db'
+import { hasUserMintedForRoleInMonth, getUserMintsForMonth, getCurrentMonthSetting } from '@/lib/db'
 import { ROLE_HIERARCHY } from '@/lib/discord'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -14,11 +14,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Missing required fields' })
     }
 
-    // Check if user already minted for this role
-    const alreadyMinted = await hasUserMintedForRole(discordId, roleName)
+    // Get current month/year setting
+    const currentMonthSetting = await getCurrentMonthSetting()
+    if (!currentMonthSetting) {
+      return res.status(500).json({ error: 'Current month not configured' })
+    }
+
+    const { month_name: monthName, year } = currentMonthSetting
+
+    // Check if user already minted for this role in current month/year
+    const alreadyMinted = await hasUserMintedForRoleInMonth(discordId, roleName, year, monthName)
     
-    // Get all user mints to check for lower-tier availability
-    const userMints = await getUserMints(discordId)
+    // Get user mints for current month/year to check for lower-tier availability
+    const userMints = await getUserMintsForMonth(discordId, year, monthName)
     const mintedRoleNames = new Set(userMints.map(mint => mint.role_name).filter(Boolean))
     
     // Find current role in hierarchy

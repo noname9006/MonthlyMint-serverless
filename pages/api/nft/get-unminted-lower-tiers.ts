@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { getUserMints } from '@/lib/db'
+import { getUserMintsForMonth, getCurrentMonthSetting } from '@/lib/db'
 import { ROLE_HIERARCHY } from '@/lib/discord'
 
 interface UnmintedLowerTier {
@@ -20,8 +20,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Missing required fields' })
     }
 
-    // Get all user mints
-    const userMints = await getUserMints(discordId)
+    // Get current month/year setting
+    const currentMonthSetting = await getCurrentMonthSetting()
+    if (!currentMonthSetting) {
+      return res.status(500).json({ error: 'Current month not configured' })
+    }
+
+    const { month_name: monthName, year } = currentMonthSetting
+
+    // Get user mints for current month/year
+    const userMints = await getUserMintsForMonth(discordId, year, monthName)
     const mintedRoleNames = new Set(userMints.map(mint => mint.role_name).filter(Boolean))
     
     // Find current role in hierarchy
