@@ -43,12 +43,17 @@ async function migrate() {
     
     if (txHashConstraint) {
       console.log(`Found UNIQUE constraint on transaction_hash: ${txHashConstraint.constraint_name}`)
+      
+      // Validate constraint name to prevent SQL injection
+      const constraintName = txHashConstraint.constraint_name
+      if (!/^[a-zA-Z0-9_]+$/.test(constraintName)) {
+        throw new Error(`Invalid constraint name format: ${constraintName}`)
+      }
+      
       console.log('Dropping constraint...')
       
-      await sql`
-        ALTER TABLE nft_mint_events 
-        DROP CONSTRAINT ${sql(txHashConstraint.constraint_name)}
-      `
+      // Use raw SQL with validated constraint name (Neon doesn't support identifier escaping in tagged templates)
+      await sql.unsafe(`ALTER TABLE nft_mint_events DROP CONSTRAINT ${constraintName}`)
       
       console.log('✅ Successfully removed UNIQUE constraint from transaction_hash')
     } else {
@@ -66,8 +71,19 @@ async function migrate() {
     console.log('\nCurrent nft_mint_events table structure:')
     console.table(columns)
     
+    // Re-fetch constraints to check current state after dropping transaction_hash constraint
+    const currentConstraints = await sql`
+      SELECT con.conname AS constraint_name
+      FROM pg_catalog.pg_constraint con
+      INNER JOIN pg_catalog.pg_class rel ON rel.oid = con.conrelid
+      INNER JOIN pg_catalog.pg_namespace nsp ON nsp.oid = connamespace
+      WHERE nsp.nspname = 'public'
+        AND rel.relname = 'nft_mint_events'
+        AND con.contype = 'u'
+    `
+    
     // Check if request_id has UNIQUE constraint (it should)
-    const requestIdConstraint = constraints.find((c: any) => {
+    const requestIdConstraint = currentConstraints.find((c: any) => {
       return c.constraint_name.includes('request_id')
     })
     

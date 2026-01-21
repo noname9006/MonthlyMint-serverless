@@ -108,7 +108,7 @@ function ensureTablesExist(database: Database.Database): void {
       level_name TEXT,
       month_name TEXT,
       year INTEGER,
-      request_id TEXT UNIQUE,
+      request_id TEXT UNIQUE, -- Nullable for backward compatibility with old single mints
       minted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users(id)
     )

@@ -67,15 +67,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!result.success) {
       console.error(`Failed to log mint for user ${discordId}, tx: ${transactionHash}, requestId: ${requestId || 'none'}:`, result.error)
       
-      // Check if it's a constraint violation error (duplicate)
+      // Check if it's a unique constraint violation error
+      // PostgreSQL error code 23505 indicates unique_violation
       const isDuplicateError = result.error && (
-        result.error.includes('unique') || 
-        result.error.includes('duplicate') ||
-        result.error.includes('already exists')
+        result.error.includes('23505') || // PostgreSQL unique violation code
+        result.error.includes('unique constraint') ||
+        result.error.includes('duplicate key')
       )
       
       if (isDuplicateError) {
-        console.warn(`Duplicate mint attempt detected - this might indicate a UNIQUE constraint on transaction_hash which should be removed for batch mints`)
+        console.warn(`Unique constraint violation detected - this might indicate a UNIQUE constraint on transaction_hash which should be removed for batch mints`)
       }
       
       return res.status(500).json({ 

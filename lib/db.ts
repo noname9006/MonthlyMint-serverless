@@ -92,7 +92,7 @@ export async function initDatabase(): Promise<void> {
         level_name TEXT,
         month_name TEXT,
         year INTEGER,
-        request_id TEXT UNIQUE,
+        request_id TEXT UNIQUE, -- Nullable for backward compatibility with old single mints
         minted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `
