@@ -392,7 +392,16 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
 
     try {
       // Prepare mint requests for all unminted lower tiers
-      const mintRequests = []
+      const mintRequests: Array<{
+        metadata: string
+        mediaURI: string
+        credentialType: string
+        issuerName: string
+        roleName: string
+        levelName: string
+        monthName: string
+        year: number
+      }> = []
       
       for (const tier of unmintedLowerTiers) {
         // Fetch media URI for each tier
