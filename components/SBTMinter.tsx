@@ -140,7 +140,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
         const data = await response.json()
         if (data.success && data.ipfsCid) {
           // Convert CID to ipfs:// URI
-          const ipfsUri = data.ipfsCid.startsWith('ipfs://') ? data.ipfsCid : `ipfs://${data.ipfsCid}`
+          const ipfsUri = cidToIpfsUri(data.ipfsCid)
           setMediaURI(ipfsUri)
         } else {
           // Try fallback to environment variables
@@ -162,8 +162,15 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
     }
   }
 
-  // Get media URI for current role and month
+  // Convert media URI to gateway URL for display
   const mediaGatewayURL = mediaURI ? ipfsToGateway(mediaURI) : null
+
+  // Helper function to convert CID to ipfs:// URI
+  const cidToIpfsUri = (cid: string): string => {
+    if (!cid) return ''
+    if (cid.startsWith('ipfs://')) return cid
+    return `ipfs://${cid}`
+  }
 
   // Helper function to wait for transaction and log the mint
   const waitForTransactionAndLog = async (txHash: `0x${string}`, tierName: string, tierMediaURI: string, tierMonthName: string, tierYear: number) => {
@@ -460,7 +467,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
         const mediaData = await mediaResponse.json()
         if (mediaData.success && mediaData.ipfsCid) {
           // Convert CID to ipfs:// URI
-          tierMediaURI = mediaData.ipfsCid.startsWith('ipfs://') ? mediaData.ipfsCid : `ipfs://${mediaData.ipfsCid}`
+          tierMediaURI = cidToIpfsUri(mediaData.ipfsCid)
         }
       }
       

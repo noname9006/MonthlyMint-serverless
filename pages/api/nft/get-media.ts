@@ -16,10 +16,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const mediaStorage = await getMediaStorage(levelName, year, monthName)
     
     if (mediaStorage && mediaStorage.ipfs_cid) {
-      // Return the IPFS CID - frontend will convert it to ipfs:// URI
+      // Convert CID to ipfs:// URI for consistency
+      const ipfsUri = mediaStorage.ipfs_cid.startsWith('ipfs://') 
+        ? mediaStorage.ipfs_cid 
+        : `ipfs://${mediaStorage.ipfs_cid}`
+      
       return res.json({
         success: true,
-        ipfsCid: mediaStorage.ipfs_cid
+        ipfsCid: mediaStorage.ipfs_cid,
+        ipfsUri: ipfsUri
       })
     }
     
