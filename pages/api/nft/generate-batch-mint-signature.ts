@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { ethers } from 'ethers'
-import { getActiveWalletConnectionByAddress, getUserByDiscordId, hasUserMintedForTier, getUserMintCount } from '@/lib/db'
+import { getActiveWalletConnectionByAddress, getUserByDiscordId, hasUserMintedForTier } from '@/lib/db'
 import { chainConfig } from '@/lib/chains'
 
 const BACKEND_PRIVATE_KEY = process.env.BACKEND_PRIVATE_KEY
