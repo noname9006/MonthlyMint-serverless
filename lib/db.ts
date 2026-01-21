@@ -450,6 +450,41 @@ export async function hasUserMintedForRole(discordId: string, roleName: string):
   return Number(result[0].count) > 0
 }
 
+// Check if user already minted for specific role in current month/year
+export async function hasUserMintedForRoleInMonth(
+  discordId: string, 
+  roleName: string, 
+  year: number, 
+  monthName: string
+): Promise<boolean> {
+  await ensureSchema()
+  const result = await sql`
+    SELECT COUNT(*) as count FROM nft_mint_events 
+    WHERE discord_id = ${discordId} 
+      AND role_name = ${roleName}
+      AND year = ${year}
+      AND month_name = ${monthName}
+  `
+  return Number(result[0].count) > 0
+}
+
+// Get user mints for specific month/year
+export async function getUserMintsForMonth(
+  discordId: string,
+  year: number,
+  monthName: string
+): Promise<NftMintEvent[]> {
+  await ensureSchema()
+  const result = await sql`
+    SELECT * FROM nft_mint_events 
+    WHERE discord_id = ${discordId} 
+      AND year = ${year}
+      AND month_name = ${monthName}
+    ORDER BY minted_at DESC
+  `
+  return result as NftMintEvent[]
+}
+
 // Check if user already minted for specific contract
 export async function hasUserMintedForContract(discordId: string, contractAddress: string): Promise<boolean> {
   await ensureSchema()
