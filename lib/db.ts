@@ -537,6 +537,15 @@ export async function getMintByTxHash(txHash: string): Promise<NftMintEvent | nu
   return result.length > 0 ? (result[0] as NftMintEvent) : null
 }
 
+// Get mint by request ID (for batch mints)
+export async function getMintByRequestId(requestId: string): Promise<NftMintEvent | null> {
+  await ensureSchema()
+  const result = await sql`
+    SELECT * FROM nft_mint_events WHERE request_id = ${requestId}
+  `
+  return result.length > 0 ? (result[0] as NftMintEvent) : null
+}
+
 // Close database connection (no-op for Neon serverless, but kept for compatibility)
 export function closeDatabase(): void {
   // Neon serverless doesn't require explicit connection closing

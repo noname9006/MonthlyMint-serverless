@@ -99,7 +99,7 @@ function ensureTablesExist(database: Database.Database): void {
       wallet_address TEXT NOT NULL,
       contract_address TEXT NOT NULL,
       token_id TEXT,
-      transaction_hash TEXT UNIQUE NOT NULL,
+      transaction_hash TEXT NOT NULL,
       role_name TEXT,
       credential_type TEXT,
       metadata TEXT,
@@ -108,7 +108,7 @@ function ensureTablesExist(database: Database.Database): void {
       level_name TEXT,
       month_name TEXT,
       year INTEGER,
-      request_id TEXT,
+      request_id TEXT UNIQUE,
       minted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users(id)
     )
@@ -476,6 +476,15 @@ export function getMintByTxHash(txHash: string): NftMintEvent | null {
     SELECT * FROM nft_mint_events WHERE transaction_hash = ?
   `)
   return (stmt.get(txHash) as NftMintEvent) || null
+}
+
+// Get mint by request ID (for batch mints)
+export function getMintByRequestId(requestId: string): NftMintEvent | null {
+  const database = getDb()
+  const stmt = database.prepare(`
+    SELECT * FROM nft_mint_events WHERE request_id = ?
+  `)
+  return (stmt.get(requestId) as NftMintEvent) || null
 }
 
 // Close database connection (useful for testing)
