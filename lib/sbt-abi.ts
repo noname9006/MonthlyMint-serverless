@@ -1,4 +1,4 @@
-// ABI for BotanistTokenEIP712 contract (NEW_T 712-1.sol)
+// ABI for BotanixAmbassadorNFT contract (NEW_T 712-2s.sol)
 export const SBT_ABI = [
   {
     "inputs": [
@@ -16,7 +16,7 @@ export const SBT_ABI = [
       { "indexed": false, "internalType": "string", "name": "mediaURI", "type": "string" },
       { "indexed": false, "internalType": "string", "name": "levelName", "type": "string" },
       { "indexed": false, "internalType": "string", "name": "monthName", "type": "string" },
-      { "indexed": false, "internalType": "uint256", "name": "year", "type": "uint256" }
+      { "indexed": false, "internalType": "uint256", "name": "yearValue", "type": "uint256" }
     ],
     "name": "SBTMinted",
     "type": "event"
@@ -41,7 +41,7 @@ export const SBT_ABI = [
       { "internalType": "uint256", "name": "nonce", "type": "uint256" },
       { "internalType": "string", "name": "levelName", "type": "string" },
       { "internalType": "string", "name": "monthName", "type": "string" },
-      { "internalType": "uint256", "name": "year", "type": "uint256" },
+      { "internalType": "uint256", "name": "yearValue", "type": "uint256" },
       { "internalType": "bytes32", "name": "requestId", "type": "bytes32" },
       { "internalType": "bytes", "name": "signature", "type": "bytes" }
     ],
@@ -52,17 +52,24 @@ export const SBT_ABI = [
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "to", "type": "address" },
-      { "internalType": "string[]", "name": "metadatas", "type": "string[]" },
-      { "internalType": "string[]", "name": "mediaURIs", "type": "string[]" },
-      { "internalType": "string[]", "name": "credentialTypes", "type": "string[]" },
-      { "internalType": "string[]", "name": "issuerNames", "type": "string[]" },
-      { "internalType": "uint256", "name": "startNonce", "type": "uint256" },
-      { "internalType": "string[]", "name": "levelNames", "type": "string[]" },
-      { "internalType": "string[]", "name": "monthNames", "type": "string[]" },
-      { "internalType": "uint256[]", "name": "years", "type": "uint256[]" },
-      { "internalType": "bytes32[]", "name": "requestIds", "type": "bytes32[]" },
-      { "internalType": "bytes[]", "name": "signatures", "type": "bytes[]" }
+      {
+        "components": [
+          { "internalType": "address", "name": "to", "type": "address" },
+          { "internalType": "string[]", "name": "metadatas", "type": "string[]" },
+          { "internalType": "string[]", "name": "mediaURIs", "type": "string[]" },
+          { "internalType": "string[]", "name": "credentialTypes", "type": "string[]" },
+          { "internalType": "string[]", "name": "issuerNames", "type": "string[]" },
+          { "internalType": "uint256", "name": "startNonce", "type": "uint256" },
+          { "internalType": "string[]", "name": "levelNames", "type": "string[]" },
+          { "internalType": "string[]", "name": "monthNames", "type": "string[]" },
+          { "internalType": "uint256[]", "name": "yearValues", "type": "uint256[]" },
+          { "internalType": "bytes32[]", "name": "requestIds", "type": "bytes32[]" },
+          { "internalType": "bytes[]", "name": "signatures", "type": "bytes[]" }
+        ],
+        "internalType": "struct BotanixAmbassadorNFT.BatchMintParams",
+        "name": "params",
+        "type": "tuple"
+      }
     ],
     "name": "mintBatchWithSignature",
     "outputs": [],
@@ -105,7 +112,7 @@ export const SBT_ABI = [
     "inputs": [
       { "internalType": "address", "name": "user", "type": "address" },
       { "internalType": "string", "name": "levelName", "type": "string" },
-      { "internalType": "uint256", "name": "year", "type": "uint256" },
+      { "internalType": "uint256", "name": "yearValue", "type": "uint256" },
       { "internalType": "string", "name": "monthName", "type": "string" }
     ],
     "name": "hasUserTier",
@@ -139,7 +146,7 @@ export const SBT_ABI = [
       { "internalType": "bool", "name": "revoked", "type": "bool" },
       { "internalType": "string", "name": "levelName", "type": "string" },
       { "internalType": "string", "name": "monthName", "type": "string" },
-      { "internalType": "uint256", "name": "year", "type": "uint256" },
+      { "internalType": "uint256", "name": "yearValue", "type": "uint256" },
       { "internalType": "uint256", "name": "mintedAt", "type": "uint256" },
       { "internalType": "address", "name": "originalMinter", "type": "address" }
     ],
@@ -172,11 +179,11 @@ export const SBT_ABI = [
           { "internalType": "bool", "name": "revoked", "type": "bool" },
           { "internalType": "string", "name": "levelName", "type": "string" },
           { "internalType": "string", "name": "monthName", "type": "string" },
-          { "internalType": "uint256", "name": "year", "type": "uint256" },
+          { "internalType": "uint256", "name": "yearValue", "type": "uint256" },
           { "internalType": "uint256", "name": "mintedAt", "type": "uint256" },
           { "internalType": "address", "name": "originalMinter", "type": "address" }
         ],
-        "internalType": "struct BotanistTokenEIP712.TokenData",
+        "internalType": "struct BotanixAmbassadorNFT.TokenData",
         "name": "",
         "type": "tuple"
       }
@@ -187,7 +194,7 @@ export const SBT_ABI = [
   {
     "inputs": [
       { "internalType": "string", "name": "levelName", "type": "string" },
-      { "internalType": "uint256", "name": "year", "type": "uint256" },
+      { "internalType": "uint256", "name": "yearValue", "type": "uint256" },
       { "internalType": "string", "name": "monthName", "type": "string" }
     ],
     "name": "getTierInfo",
@@ -202,7 +209,7 @@ export const SBT_ABI = [
           { "internalType": "uint256", "name": "maxSupply", "type": "uint256" },
           { "internalType": "uint256", "name": "currentSupply", "type": "uint256" }
         ],
-        "internalType": "struct BotanistTokenEIP712.TierInfo",
+        "internalType": "struct BotanixAmbassadorNFT.TierInfo",
         "name": "",
         "type": "tuple"
       }
