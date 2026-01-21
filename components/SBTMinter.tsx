@@ -511,7 +511,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
       })
 
       // Log each mint individually using Promise.allSettled to attempt all logs
-      const logPromises = mintRequests.map((request) => 
+      const logPromises = mintRequests.map((request, index) => 
         fetch('/api/nft/log-mint', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -527,6 +527,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
             levelName: request.levelName,
             monthName: request.monthName,
             year: request.year,
+            requestId: data.requestIds[index],
           }),
         }).then(res => res.json()).catch(err => ({
           success: false,
