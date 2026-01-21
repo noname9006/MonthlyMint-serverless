@@ -105,6 +105,10 @@ function ensureTablesExist(database: Database.Database): void {
       metadata TEXT,
       media_uri TEXT,
       level INTEGER,
+      level_name TEXT,
+      month_name TEXT,
+      year INTEGER,
+      request_id TEXT,
       minted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users(id)
     )
@@ -335,6 +339,10 @@ export interface NftMintEvent {
   metadata?: string
   media_uri?: string
   level?: number
+  level_name?: string
+  month_name?: string
+  year?: number
+  request_id?: string
   minted_at?: string
 }
 
@@ -361,8 +369,9 @@ export function logNftMint(event: NftMintEvent): LogNftMintResult {
     const stmt = database.prepare(`
       INSERT INTO nft_mint_events 
       (discord_id, user_id, wallet_address, contract_address, token_id, 
-       transaction_hash, role_name, credential_type, metadata, media_uri, level)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       transaction_hash, role_name, credential_type, metadata, media_uri, level,
+       level_name, month_name, year, request_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `)
     
     const info = stmt.run(
@@ -376,7 +385,11 @@ export function logNftMint(event: NftMintEvent): LogNftMintResult {
       event.credential_type || null,
       event.metadata || null,
       event.media_uri || null,
-      event.level || null
+      event.level || null,
+      event.level_name || null,
+      event.month_name || null,
+      event.year || null,
+      event.request_id || null
     )
     
     // Verify the insert was successful
@@ -434,6 +447,25 @@ export function hasUserMintedForContract(discordId: string, contractAddress: str
     WHERE discord_id = ? AND contract_address = ?
   `)
   const result = stmt.get(discordId, contractAddress.toLowerCase()) as { count: number }
+  return result.count > 0
+}
+
+// Check if user already minted for specific tier (levelName + year + monthName)
+export function hasUserMintedForTier(
+  discordId: string, 
+  levelName: string, 
+  year: number, 
+  monthName: string
+): boolean {
+  const database = getDb()
+  const stmt = database.prepare(`
+    SELECT COUNT(*) as count FROM nft_mint_events 
+    WHERE discord_id = ? 
+      AND level_name = ?
+      AND year = ?
+      AND month_name = ?
+  `)
+  const result = stmt.get(discordId, levelName, year, monthName) as { count: number }
   return result.count > 0
 }
 

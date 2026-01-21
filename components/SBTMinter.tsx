@@ -343,7 +343,9 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
         const errorData = await response.json()
         
         // Handle specific error codes
-        if (errorData.code === 'ALREADY_MINTED_ROLE') {
+        if (errorData.code === 'ALREADY_MINTED_TIER') {
+          setError(`You have already minted this NFT for this month/year`)
+        } else if (errorData.code === 'ALREADY_MINTED_ROLE') {
           setError(`You have already minted an NFT for the ${roleName} role`)
         } else if (errorData.code === 'ALREADY_MINTED_CONTRACT') {
           setError('You have already minted an NFT from this contract')
@@ -507,7 +509,13 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
         const errorData = await response.json()
         let errorMessage = errorData.error || 'Failed to get signature'
         
-        if (errorData.code === 'ALREADY_MINTED_ROLE') {
+        if (errorData.code === 'ALREADY_MINTED_TIER') {
+          errorMessage = 'Already minted'
+          setLowerTierMintStates(prev => ({
+            ...prev,
+            [tierName]: { status: 'minted' }
+          }))
+        } else if (errorData.code === 'ALREADY_MINTED_ROLE') {
           errorMessage = 'Already minted'
           setLowerTierMintStates(prev => ({
             ...prev,

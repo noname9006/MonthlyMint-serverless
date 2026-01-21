@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { ethers } from 'ethers'
-import { getActiveWalletConnectionByAddress, getUserByDiscordId, hasUserMintedForRole, getUserMintCount } from '@/lib/db'
+import { getActiveWalletConnectionByAddress, getUserByDiscordId, hasUserMintedForTier } from '@/lib/db'
 import { chainConfig } from '@/lib/chains'
 
 const BACKEND_PRIVATE_KEY = process.env.BACKEND_PRIVATE_KEY
@@ -48,22 +48,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(403).json({ error: 'Wallet not connected to Discord account' })
     }
 
-    // Check total mint limit
-    const MAX_MINTS_PER_USER = 6
-    const totalMints = await getUserMintCount(discordId)
-    if (totalMints + mintRequests.length > MAX_MINTS_PER_USER) {
-      return res.status(403).json({ 
-        error: `Batch would exceed maximum mints (${MAX_MINTS_PER_USER}). You have ${totalMints} mints, requesting ${mintRequests.length} more.`,
-        code: 'MAX_MINTS_EXCEEDED'
-      })
-    }
-
-    // Check if any requested roles are already minted
+    // Check each request for tier duplication
     for (const request of mintRequests) {
-      if (await hasUserMintedForRole(discordId, request.roleName)) {
+      if (await hasUserMintedForTier(discordId, request.levelName, request.year, request.monthName)) {
         return res.status(403).json({ 
-          error: `You have already minted an NFT for the ${request.roleName} role`,
-          code: 'ALREADY_MINTED_ROLE'
+          error: `You have already minted an NFT for ${request.levelName} - ${request.monthName} ${request.year}`,
+          code: 'ALREADY_MINTED_TIER'
         })
       }
     }
