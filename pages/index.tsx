@@ -46,15 +46,15 @@ export default function Home() {
   // Guild membership and roles are validated server-side during minting
   const isDiscordVerified = useMemo(() => Boolean(discordUser), [discordUser])
 
-  // Check if user is eligible to proceed to mint (both Discord and wallet connected, has role)
-  const canProceedToMint = useMemo(() => {
-    return isDiscordVerified && isConnected && Boolean(highestRole) && Boolean(guildMember)
-  }, [isDiscordVerified, isConnected, highestRole, guildMember])
-
   // Wallet connection tracking
   const { address, isConnected } = useAccount()
   const { disconnect } = useDisconnect()
   const lastLoggedAddress = useRef<string | undefined>(undefined)
+  
+  // Check if user is eligible to proceed to mint (both Discord and wallet connected, has role)
+  const canProceedToMint = useMemo(() => {
+    return isDiscordVerified && isConnected && Boolean(highestRole) && Boolean(guildMember)
+  }, [isDiscordVerified, isConnected, highestRole, guildMember])
   
   // Discord popup timer management
   const discordPopupTimeoutRef = useRef<NodeJS.Timeout | null>(null)
