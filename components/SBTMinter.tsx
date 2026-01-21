@@ -468,6 +468,21 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
 
       const data = await response.json()
       
+      // Validate response data
+      if (!data.signatures || !Array.isArray(data.signatures) ||
+          !data.requestIds || !Array.isArray(data.requestIds) ||
+          !data.years || !Array.isArray(data.years) ||
+          !data.metadatas || !Array.isArray(data.metadatas) ||
+          !data.mediaURIs || !Array.isArray(data.mediaURIs) ||
+          !data.credentialTypes || !Array.isArray(data.credentialTypes) ||
+          !data.issuerNames || !Array.isArray(data.issuerNames) ||
+          !data.levelNames || !Array.isArray(data.levelNames) ||
+          !data.monthNames || !Array.isArray(data.monthNames)) {
+        setError('Invalid response from batch mint signature API')
+        setLoading(false)
+        return
+      }
+      
       // Execute batch mint on-chain
       const txHash = await mintWithSignatureAsync({
         address: NFT_CONTRACT_ADDRESS as `0x${string}`,
@@ -495,10 +510,9 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
         hash: txHash,
       })
 
-      // Log each mint individually
-      for (let i = 0; i < mintRequests.length; i++) {
-        const request = mintRequests[i]
-        await fetch('/api/nft/log-mint', {
+      // Log each mint individually using Promise.allSettled to attempt all logs
+      const logPromises = mintRequests.map((request) => 
+        fetch('/api/nft/log-mint', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -514,7 +528,22 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
             monthName: request.monthName,
             year: request.year,
           }),
-        })
+        }).then(res => res.json()).catch(err => ({
+          success: false,
+          error: err.message
+        }))
+      )
+      
+      const logResults = await Promise.allSettled(logPromises)
+      
+      // Check if any logs failed
+      const failedLogs = logResults.filter(result => 
+        result.status === 'rejected' || 
+        (result.status === 'fulfilled' && !result.value.success)
+      )
+      
+      if (failedLogs.length > 0) {
+        console.warn(`${failedLogs.length} mint logs failed, but mints succeeded on-chain`)
       }
 
       setSuccess(`Successfully minted ${mintRequests.length} lower-tier NFTs!`)
