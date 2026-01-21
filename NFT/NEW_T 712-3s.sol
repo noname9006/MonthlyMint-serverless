@@ -609,8 +609,4 @@ contract BotanixAmbassadorNFT is ERC721URIStorage, Ownable {
 
         return string(abi.encodePacked("data:application/json;base64,", json));
     }
-        );
-
-        return string(abi.encodePacked("data:application/json;base64,", json));
-    }
 }
