@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { ethers } from 'ethers'
-import { getActiveWalletConnectionByAddress, getUserByDiscordId, hasUserMintedForRole, hasUserMintedForContract, getUserMintCount } from '@/lib/db'
+import { getActiveWalletConnectionByAddress, getUserByDiscordId, hasUserMintedForTier, getUserMintCount } from '@/lib/db'
 import { chainConfig } from '@/lib/chains'
 
 const BACKEND_PRIVATE_KEY = process.env.BACKEND_PRIVATE_KEY
@@ -117,34 +117,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })
     }
 
-    // Anti-abuse checks: Check mint history before generating signature
-    const MAX_MINTS_PER_USER = 6 // One per role
-    
-    // Check if user already minted for this specific role
-    if (await hasUserMintedForRole(discordId, roleName)) {
-      console.log(`User ${discordId} already minted for role: ${roleName}`)
+    // Anti-abuse checks: Check if user already minted this specific tier (levelName + year + monthName)
+    if (await hasUserMintedForTier(discordId, levelName, year, monthName)) {
+      console.log(`User ${discordId} already minted tier: ${levelName} - ${monthName} ${year}`)
       return res.status(403).json({ 
-        error: 'You have already minted an NFT for this role',
-        code: 'ALREADY_MINTED_ROLE'
-      })
-    }
-
-    // Check if user already minted from this specific contract
-    if (await hasUserMintedForContract(discordId, contractAddress)) {
-      console.log(`User ${discordId} already minted from contract: ${contractAddress}`)
-      return res.status(403).json({ 
-        error: 'You have already minted an NFT from this contract',
-        code: 'ALREADY_MINTED_CONTRACT'
-      })
-    }
-
-    // Check total mint limit per Discord account
-    const totalMints = await getUserMintCount(discordId)
-    if (totalMints >= MAX_MINTS_PER_USER) {
-      console.log(`User ${discordId} exceeded max mints: ${totalMints}/${MAX_MINTS_PER_USER}`)
-      return res.status(403).json({ 
-        error: `You have reached the maximum number of NFT mints (${MAX_MINTS_PER_USER})`,
-        code: 'MAX_MINTS_EXCEEDED'
+        error: `You have already minted an NFT for ${levelName} - ${monthName} ${year}`,
+        code: 'ALREADY_MINTED_TIER'
       })
     }
 

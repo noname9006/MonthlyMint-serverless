@@ -196,13 +196,8 @@ contract BotanixAmbassadorNFT is ERC721URIStorage, Ownable {
         require(bytes(mediaURI).length > 0, "URI");
         require(!usedRequestIds[requestId], "REQ_USED");
 
-        TierInfo storage tier = tiers[levelName][yearValue][monthName];
-        require(tier.active, "INACTIVE");
+        // Check if user already has this tier (levelName + year + monthName)
         require(!userHasTier[to][levelName][yearValue][monthName], "HAS_TIER");
-
-        if (tier.maxSupply > 0) {
-            require(tier.currentSupply < tier.maxSupply, "MAX_SUP");
-        }
     }
 
     function _validateBatchMintParams(
@@ -235,13 +230,8 @@ contract BotanixAmbassadorNFT is ERC721URIStorage, Ownable {
             require(bytes(mediaURIs[i]).length > 0, "URI");
             require(!usedRequestIds[requestIds[i]], "REQ_USED");
 
-            TierInfo storage tier = tiers[levelNames[i]][yearValues[i]][monthNames[i]];
-            require(tier.active, "INACTIVE");
+            // Check if user already has this tier (levelName + year + monthName)
             require(!userHasTier[to][levelNames[i]][yearValues[i]][monthNames[i]], "HAS_TIER");
-
-            if (tier.maxSupply > 0) {
-                require(tier.currentSupply < tier.maxSupply, "MAX_SUP");
-            }
         }
     }
 

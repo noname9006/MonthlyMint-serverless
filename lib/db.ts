@@ -460,6 +460,24 @@ export async function hasUserMintedForContract(discordId: string, contractAddres
   return Number(result[0].count) > 0
 }
 
+// Check if user already minted for specific tier (levelName + year + monthName)
+export async function hasUserMintedForTier(
+  discordId: string, 
+  levelName: string, 
+  year: number, 
+  monthName: string
+): Promise<boolean> {
+  await ensureSchema()
+  const result = await sql`
+    SELECT COUNT(*) as count FROM nft_mint_events 
+    WHERE discord_id = ${discordId} 
+      AND level_name = ${levelName}
+      AND year = ${year}
+      AND month_name = ${monthName}
+  `
+  return Number(result[0].count) > 0
+}
+
 // Get mint by transaction hash
 export async function getMintByTxHash(txHash: string): Promise<NftMintEvent | null> {
   await ensureSchema()
