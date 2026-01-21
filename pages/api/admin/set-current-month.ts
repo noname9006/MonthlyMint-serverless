@@ -1,33 +1,45 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-
-// In-memory storage for current month (in production, use database or env variable)
-// TODO: Move this to database for production to avoid state loss on cold starts
-// This will be reset on serverless function cold start, which is acceptable for development
-// For production, consider storing in database or using environment variables
-let currentMonth = {
-  monthName: 'January',
-  year: new Date().getFullYear()
-}
+import { getCurrentMonthSetting, setCurrentMonthSetting } from '@/lib/db'
+import { checkAdminAuth } from '@/lib/admin'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Simple admin authentication - check for admin secret
-  const adminSecret = req.headers['x-admin-secret'] as string
-  const expectedSecret = process.env.ADMIN_SECRET
-  
-  if (!expectedSecret || adminSecret !== expectedSecret) {
-    return res.status(401).json({ error: 'Unauthorized' })
-  }
-
   if (req.method === 'GET') {
-    // Get current month
-    return res.json({
-      success: true,
-      currentMonth
-    })
+    // Public endpoint - anyone can get current month
+    try {
+      const currentMonth = await getCurrentMonthSetting()
+      
+      if (!currentMonth) {
+        // Return default if not set
+        return res.json({
+          success: true,
+          currentMonth: {
+            monthName: 'January',
+            year: new Date().getFullYear()
+          }
+        })
+      }
+      
+      return res.json({
+        success: true,
+        currentMonth: {
+          monthName: currentMonth.month_name,
+          year: currentMonth.year
+        }
+      })
+    } catch (error) {
+      console.error('Error fetching current month:', error)
+      return res.status(500).json({ error: 'Failed to fetch current month' })
+    }
   }
 
   if (req.method === 'POST') {
-    // Set current month
+    // Admin-only endpoint - requires Discord user ID authentication
+    const discordUserId = req.headers['x-discord-user-id'] as string
+    
+    if (!checkAdminAuth(discordUserId)) {
+      return res.status(401).json({ error: 'Unauthorized - Admin access required' })
+    }
+
     const { monthName, year } = req.body
 
     if (!monthName || !year) {
@@ -46,18 +58,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Invalid year (must be >= 2024)' })
     }
 
-    currentMonth = { monthName, year }
+    try {
+      const currentMonth = await setCurrentMonthSetting(monthName, year)
 
-    return res.json({
-      success: true,
-      currentMonth
-    })
+      return res.json({
+        success: true,
+        currentMonth: {
+          monthName: currentMonth.month_name,
+          year: currentMonth.year
+        }
+      })
+    } catch (error) {
+      console.error('Error setting current month:', error)
+      return res.status(500).json({ error: 'Failed to set current month' })
+    }
   }
 
   return res.status(405).json({ error: 'Method not allowed' })
-}
-
-// Export getter for other API routes to access current month
-export function getCurrentMonth() {
-  return currentMonth
 }

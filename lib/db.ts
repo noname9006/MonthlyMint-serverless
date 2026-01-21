@@ -97,6 +97,31 @@ export async function initDatabase(): Promise<void> {
       )
     `
 
+    // Create table for current month/year settings
+    await sql`
+      CREATE TABLE IF NOT EXISTS current_month_settings (
+        id SERIAL PRIMARY KEY,
+        month_name TEXT NOT NULL,
+        year INTEGER NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `
+
+    // Create table for media storage (IPFS CIDs)
+    await sql`
+      CREATE TABLE IF NOT EXISTS media_storage (
+        id SERIAL PRIMARY KEY,
+        level_name TEXT NOT NULL,
+        year INTEGER NOT NULL,
+        month_name TEXT NOT NULL,
+        ipfs_cid TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (level_name, year, month_name)
+      )
+    `
+
     // Create indexes
     await sql`CREATE INDEX IF NOT EXISTS idx_users_discord_id ON users(discord_id)`
     await sql`CREATE INDEX IF NOT EXISTS idx_discord_auth_logs_discord_id ON discord_auth_logs(discord_id)`
@@ -107,6 +132,7 @@ export async function initDatabase(): Promise<void> {
     await sql`CREATE INDEX IF NOT EXISTS idx_nft_mint_events_tx_hash ON nft_mint_events(transaction_hash)`
     await sql`CREATE INDEX IF NOT EXISTS idx_nft_mint_events_wallet ON nft_mint_events(wallet_address)`
     await sql`CREATE INDEX IF NOT EXISTS idx_nft_mint_events_contract ON nft_mint_events(contract_address)`
+    await sql`CREATE INDEX IF NOT EXISTS idx_media_storage_lookup ON media_storage(level_name, year, month_name)`
 
     if (process.env.NODE_ENV !== 'production') {
       console.log('Database schema initialized successfully')
@@ -447,4 +473,129 @@ export async function getMintByTxHash(txHash: string): Promise<NftMintEvent | nu
 export function closeDatabase(): void {
   // Neon serverless doesn't require explicit connection closing
   console.log('Neon serverless - no connection cleanup required')
+}
+
+// Current Month Settings Functions
+
+export interface CurrentMonthSetting {
+  id: number
+  month_name: string
+  year: number
+  created_at: string
+  updated_at: string
+}
+
+export async function getCurrentMonthSetting(): Promise<CurrentMonthSetting | null> {
+  await ensureSchema()
+  const result = await sql`
+    SELECT * FROM current_month_settings 
+    ORDER BY updated_at DESC 
+    LIMIT 1
+  `
+  return result.length > 0 ? (result[0] as CurrentMonthSetting) : null
+}
+
+export async function setCurrentMonthSetting(monthName: string, year: number): Promise<CurrentMonthSetting> {
+  await ensureSchema()
+  
+  // Check if a record exists
+  const existing = await sql`SELECT id FROM current_month_settings LIMIT 1`
+  
+  if (existing.length > 0) {
+    // Update existing record
+    const result = await sql`
+      UPDATE current_month_settings
+      SET month_name = ${monthName},
+          year = ${year},
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${existing[0].id}
+      RETURNING *
+    `
+    return result[0] as CurrentMonthSetting
+  } else {
+    // Insert new record
+    const result = await sql`
+      INSERT INTO current_month_settings (month_name, year)
+      VALUES (${monthName}, ${year})
+      RETURNING *
+    `
+    return result[0] as CurrentMonthSetting
+  }
+}
+
+// Media Storage Functions
+
+export interface MediaStorage {
+  id: number
+  level_name: string
+  year: number
+  month_name: string
+  ipfs_cid: string
+  created_at: string
+  updated_at: string
+}
+
+export async function getMediaStorage(levelName: string, year: number, monthName: string): Promise<MediaStorage | null> {
+  await ensureSchema()
+  const result = await sql`
+    SELECT * FROM media_storage 
+    WHERE level_name = ${levelName} 
+      AND year = ${year} 
+      AND month_name = ${monthName}
+  `
+  return result.length > 0 ? (result[0] as MediaStorage) : null
+}
+
+export async function getAllMediaStorageForYearMonth(year: number, monthName: string): Promise<MediaStorage[]> {
+  await ensureSchema()
+  const result = await sql`
+    SELECT * FROM media_storage 
+    WHERE year = ${year} AND month_name = ${monthName}
+    ORDER BY level_name
+  `
+  return result as MediaStorage[]
+}
+
+export async function upsertMediaStorage(levelName: string, year: number, monthName: string, ipfsCid: string): Promise<MediaStorage> {
+  await ensureSchema()
+  
+  // Check if exists
+  const existing = await sql`
+    SELECT id FROM media_storage 
+    WHERE level_name = ${levelName} 
+      AND year = ${year} 
+      AND month_name = ${monthName}
+  `
+  
+  if (existing.length > 0) {
+    // Update existing
+    const result = await sql`
+      UPDATE media_storage 
+      SET ipfs_cid = ${ipfsCid}, 
+          updated_at = CURRENT_TIMESTAMP
+      WHERE level_name = ${levelName} 
+        AND year = ${year} 
+        AND month_name = ${monthName}
+      RETURNING *
+    `
+    return result[0] as MediaStorage
+  } else {
+    // Insert new
+    const result = await sql`
+      INSERT INTO media_storage (level_name, year, month_name, ipfs_cid)
+      VALUES (${levelName}, ${year}, ${monthName}, ${ipfsCid})
+      RETURNING *
+    `
+    return result[0] as MediaStorage
+  }
+}
+
+export async function deleteMediaStorage(levelName: string, year: number, monthName: string): Promise<void> {
+  await ensureSchema()
+  await sql`
+    DELETE FROM media_storage 
+    WHERE level_name = ${levelName} 
+      AND year = ${year} 
+      AND month_name = ${monthName}
+  `
 }
