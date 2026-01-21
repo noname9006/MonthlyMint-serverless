@@ -39,6 +39,9 @@ export default function Home() {
   const [hasLowerTierAvailable, setHasLowerTierAvailable] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
 
+  // Only check discordUser for verification, not guildMember
+  // This allows users to proceed even if guild member check fails
+  // Guild membership and roles are validated server-side during minting
   const isDiscordVerified = useMemo(() => Boolean(discordUser), [discordUser])
 
   // Wallet connection tracking
@@ -64,12 +67,12 @@ export default function Home() {
 
   // Check mint status when wallet and Discord are connected
   useEffect(() => {
-    if (isConnected && isDiscordVerified && highestRole) {
+    if (isConnected && isDiscordVerified && discordUser && highestRole) {
       fetch('/api/nft/check-mint-status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          discordId: discordUser!.id,
+          discordId: discordUser.id,
           roleName: highestRole.name,
         }),
       })
