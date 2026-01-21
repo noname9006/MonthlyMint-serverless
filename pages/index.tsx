@@ -64,16 +64,21 @@ export default function Home() {
 
   // Check mint status when wallet and Discord are connected
   useEffect(() => {
-    if (isConnected && isDiscordVerified && discordUser && highestRole) {
+    if (isConnected && isDiscordVerified && highestRole) {
       fetch('/api/nft/check-mint-status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          discordId: discordUser.id,
+          discordId: discordUser!.id,
           roleName: highestRole.name,
         }),
       })
-        .then(res => res.json())
+        .then(res => {
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`)
+          }
+          return res.json()
+        })
         .then(data => {
           if (data.success) {
             setAlreadyMinted(data.alreadyMinted)
