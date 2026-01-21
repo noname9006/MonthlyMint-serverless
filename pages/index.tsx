@@ -37,6 +37,7 @@ export default function Home() {
   const [alreadyMinted, setAlreadyMinted] = useState(false)
   const [hasLowerTierAvailable, setHasLowerTierAvailable] = useState(false)
   const [checkingMintStatus, setCheckingMintStatus] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
 
   const isDiscordVerified = useMemo(() => Boolean(discordUser && guildMember), [discordUser, guildMember])
 
@@ -62,38 +63,35 @@ export default function Home() {
     }
   }
 
-  // Check mint status when wallet connects and Discord is verified
+  // Check admin status when Discord user changes
   useEffect(() => {
-    if (isConnected && isDiscordVerified && discordUser && highestRole && !hasShownPopup.current) {
-      setCheckingMintStatus(true)
-      fetch('/api/nft/check-mint-status', {
+    if (discordUser) {
+      // Store Discord user ID in session storage for admin dashboard
+      sessionStorage.setItem('discord_user_id', discordUser.id)
+      
+      // Check if user is admin
+      fetch('/api/admin/check-admin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          discordId: discordUser.id,
-          roleName: highestRole.name,
-        }),
+        body: JSON.stringify({ discordUserId: discordUser.id }),
       })
         .then(res => res.json())
         .then(data => {
-          if (data.success) {
-            setAlreadyMinted(data.alreadyMinted)
-            setHasLowerTierAvailable(data.hasLowerTierAvailable)
+          if (data.success && data.isAdmin) {
+            setIsAdmin(true)
+          } else {
+            setIsAdmin(false)
           }
-          setShowPopup(true)
-          hasShownPopup.current = true
         })
         .catch(err => {
-          console.error('Failed to check mint status:', err)
-          // Show popup anyway on error
-          setShowPopup(true)
-          hasShownPopup.current = true
+          console.error('Failed to check admin status:', err)
+          setIsAdmin(false)
         })
-        .finally(() => {
-          setCheckingMintStatus(false)
-        })
+    } else {
+      sessionStorage.removeItem('discord_user_id')
+      setIsAdmin(false)
     }
-  }, [isConnected, isDiscordVerified, discordUser, highestRole])
+  }, [discordUser])
 
   // Clear any persisted Discord state on mount to ensure fresh authentication
   // Users must re-authenticate with Discord after page refresh/restart
@@ -239,17 +237,53 @@ export default function Home() {
     setHighestRole(null)
     setDiscordError(null)
     setDiscordLoading(false)
+    setIsAdmin(false)
     
     // Clear any persisted state
     localStorage.removeItem('discord_user')
     localStorage.removeItem('discord_member')
     localStorage.removeItem('discord_role')
+    sessionStorage.removeItem('discord_user_id')
     
     // Reset popup and mint status
     hasShownPopup.current = false
     setShowPopup(false)
     setAlreadyMinted(false)
     setHasLowerTierAvailable(false)
+  }
+
+  const handleProceedToMint = () => {
+    if (!isConnected || !isDiscordVerified || !discordUser || !highestRole) {
+      return
+    }
+
+    setCheckingMintStatus(true)
+    fetch('/api/nft/check-mint-status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        discordId: discordUser.id,
+        roleName: highestRole.name,
+      }),
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setAlreadyMinted(data.alreadyMinted)
+          setHasLowerTierAvailable(data.hasLowerTierAvailable)
+        }
+        setShowPopup(true)
+        hasShownPopup.current = true
+      })
+      .catch(err => {
+        console.error('Failed to check mint status:', err)
+        // Show popup anyway on error
+        setShowPopup(true)
+        hasShownPopup.current = true
+      })
+      .finally(() => {
+        setCheckingMintStatus(false)
+      })
   }
 
   return (
@@ -299,6 +333,18 @@ export default function Home() {
                   )}
                 </div>
 
+                {/* Admin Dashboard Button */}
+                {isAdmin && (
+                  <div className="mt-3">
+                    <button 
+                      onClick={() => window.location.href = '/admin/dashboard'} 
+                      className="btn-cyber w-full"
+                    >
+                      Admin Dashboard
+                    </button>
+                  </div>
+                )}
+
                 {discordError && <p className="text-error mt-3 text-sm">{discordError}</p>}
 
                 {discordUser && (
@@ -343,6 +389,19 @@ export default function Home() {
                   <ConnectButton label="Connect wallet" showBalance={false} chainStatus="name" />
                 </div>
                 {!isDiscordVerified && <p className="mt-2 text-text-secondary text-sm">Finish Discord login first.</p>}
+                
+                {/* Proceed to Mint Button */}
+                {isDiscordVerified && isConnected && (
+                  <div className="mt-4">
+                    <button 
+                      onClick={handleProceedToMint}
+                      disabled={checkingMintStatus}
+                      className="btn-cyber w-full"
+                    >
+                      {checkingMintStatus ? 'Checking...' : 'Proceed to Mint'}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>

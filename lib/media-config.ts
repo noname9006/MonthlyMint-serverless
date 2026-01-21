@@ -1,6 +1,7 @@
 /**
  * Media configuration for NFTs by level and month
  * This replaces the contract-stored media URIs from the old implementation
+ * Now supports both database storage and environment variables (fallback)
  */
 
 /**
@@ -99,6 +100,8 @@ export const MEDIA_LINKS: AllMediaConfig = {
 
 /**
  * Get media URI for a specific level, year, and month
+ * First checks environment variables (for backward compatibility)
+ * In the future, this should query the database
  */
 export function getMediaURI(levelName: string, year: number, monthName: string): string | null {
   const levelConfig = MEDIA_LINKS[levelName]
@@ -120,6 +123,30 @@ export function getMediaURI(levelName: string, year: number, monthName: string):
   }
 
   return monthConfig.ipfsUri
+}
+
+/**
+ * Server-side function to get media URI from database
+ * This should be used in API routes
+ */
+export async function getMediaURIFromDatabase(levelName: string, year: number, monthName: string): Promise<string | null> {
+  try {
+    // Dynamic import to avoid issues in client-side code
+    const { getMediaStorage } = await import('./db')
+    
+    const mediaStorage = await getMediaStorage(levelName, year, monthName)
+    
+    if (mediaStorage && mediaStorage.ipfs_cid) {
+      return cidToIpfsUri(mediaStorage.ipfs_cid)
+    }
+    
+    // Fallback to environment variables if not in database
+    return getMediaURI(levelName, year, monthName)
+  } catch (error) {
+    console.error('Error fetching media from database:', error)
+    // Fallback to environment variables on error
+    return getMediaURI(levelName, year, monthName)
+  }
 }
 
 /**
