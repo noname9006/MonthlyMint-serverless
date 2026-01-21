@@ -552,15 +552,27 @@ contract BotanixAmbassadorNFT is ERC721URIStorage, Ownable {
         }
 
         // Build metadata JSON on-chain with tier information
-        string memory name = string(abi.encodePacked(
-            tier.name,
-            " - ",
-            data.levelName,
-            " - ",
-            data.monthName,
-            " ",
-            data.yearValue.toString()
-        ));
+        string memory name;
+        if (bytes(tier.name).length > 0) {
+            // Use tier name if configured
+            name = string(abi.encodePacked(
+                tier.name,
+                " - ",
+                data.monthName,
+                " ",
+                data.yearValue.toString()
+            ));
+        } else {
+            // Fallback to level name if tier not configured
+            name = string(abi.encodePacked(
+                "Botanix Ambassador - ",
+                data.levelName,
+                " - ",
+                data.monthName,
+                " ",
+                data.yearValue.toString()
+            ));
+        }
 
         string memory description = bytes(tier.description).length > 0 
             ? tier.description 
@@ -593,6 +605,10 @@ contract BotanixAmbassadorNFT is ERC721URIStorage, Ownable {
                     )
                 )
             )
+        );
+
+        return string(abi.encodePacked("data:application/json;base64,", json));
+    }
         );
 
         return string(abi.encodePacked("data:application/json;base64,", json));
