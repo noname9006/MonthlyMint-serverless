@@ -92,7 +92,7 @@ export async function initDatabase(): Promise<void> {
         level_name TEXT,
         month_name TEXT,
         year INTEGER,
-        request_id TEXT UNIQUE,
+        request_id TEXT UNIQUE, -- Nullable for backward compatibility with old single mints
         minted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `
@@ -533,6 +533,15 @@ export async function getMintByTxHash(txHash: string): Promise<NftMintEvent | nu
   await ensureSchema()
   const result = await sql`
     SELECT * FROM nft_mint_events WHERE transaction_hash = ${txHash}
+  `
+  return result.length > 0 ? (result[0] as NftMintEvent) : null
+}
+
+// Get mint by request ID (for batch mints)
+export async function getMintByRequestId(requestId: string): Promise<NftMintEvent | null> {
+  await ensureSchema()
+  const result = await sql`
+    SELECT * FROM nft_mint_events WHERE request_id = ${requestId}
   `
   return result.length > 0 ? (result[0] as NftMintEvent) : null
 }

@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { getUserByDiscordId, logNftMint, getMintByTxHash } from '@/lib/db'
+import { getUserByDiscordId, logNftMint, getMintByTxHash, getMintByRequestId } from '@/lib/db'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -65,26 +65,51 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     })
 
     if (!result.success) {
-      console.error(`Failed to log mint for user ${discordId}, tx: ${transactionHash}:`, result.error)
+      console.error(`Failed to log mint for user ${discordId}, tx: ${transactionHash}, requestId: ${requestId || 'none'}:`, result.error)
+      
+      // Check if it's a unique constraint violation error
+      // PostgreSQL error code 23505 indicates unique_violation
+      const isDuplicateError = result.error && (
+        result.error.includes('23505') || // PostgreSQL unique violation code
+        result.error.includes('unique constraint') ||
+        result.error.includes('duplicate key')
+      )
+      
+      if (isDuplicateError) {
+        console.warn(`Unique constraint violation detected - this might indicate a UNIQUE constraint on transaction_hash which should be removed for batch mints`)
+      }
+      
       return res.status(500).json({ 
         success: false,
         error: result.error || 'Failed to log mint event to database'
       })
     }
 
-    // Double-check verification: Ensure the transaction is actually in the database
-    // This provides additional safety in race condition scenarios where multiple requests
-    // might attempt to log the same transaction simultaneously
-    const verifyMint = await getMintByTxHash(transactionHash)
-    if (!verifyMint) {
-      console.error(`Verification failed: Mint not found in database for tx: ${transactionHash}`)
-      return res.status(500).json({ 
-        success: false,
-        error: 'Database verification failed - mint event not found after insert'
-      })
+    // Double-check verification: Ensure the mint is actually in the database
+    // For batch mints with request_id, verify using request_id
+    // Otherwise, verify using transaction_hash (legacy single mints)
+    let verifyMint
+    if (requestId) {
+      verifyMint = await getMintByRequestId(requestId)
+      if (!verifyMint) {
+        console.error(`Verification failed: Mint not found in database for requestId: ${requestId}`)
+        return res.status(500).json({ 
+          success: false,
+          error: 'Database verification failed - mint event not found after insert'
+        })
+      }
+    } else {
+      verifyMint = await getMintByTxHash(transactionHash)
+      if (!verifyMint) {
+        console.error(`Verification failed: Mint not found in database for tx: ${transactionHash}`)
+        return res.status(500).json({ 
+          success: false,
+          error: 'Database verification failed - mint event not found after insert'
+        })
+      }
     }
 
-    console.log(`Logged mint for user ${discordId}, tx: ${transactionHash}`)
+    console.log(`Logged mint for user ${discordId}, tx: ${transactionHash}, requestId: ${requestId || 'none'}`)
 
     res.json({
       success: true,

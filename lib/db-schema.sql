@@ -58,12 +58,16 @@ CREATE TABLE IF NOT EXISTS nft_mint_events (
   wallet_address TEXT NOT NULL,
   contract_address TEXT NOT NULL,
   token_id TEXT,
-  transaction_hash TEXT UNIQUE NOT NULL,
+  transaction_hash TEXT NOT NULL,
   role_name TEXT,
   credential_type TEXT,
   metadata TEXT,
   media_uri TEXT,
   level INTEGER,
+  level_name TEXT,
+  month_name TEXT,
+  year INTEGER,
+  request_id TEXT UNIQUE, -- Nullable for backward compatibility with old single mints
   minted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
