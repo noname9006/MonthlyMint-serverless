@@ -131,13 +131,37 @@ export default function Home() {
     }
   }, [discordUser])
 
-  // Clear any persisted Discord state on mount to ensure fresh authentication
-  // Users must re-authenticate with Discord after page refresh/restart
+  // Load Discord auth from session storage on mount (5-minute persistence)
+  // Role verification happens server-side during minting, so we don't re-verify here
   useEffect(() => {
-    // Clear any stored Discord authentication data
-    localStorage.removeItem('discord_user')
-    localStorage.removeItem('discord_member')
-    localStorage.removeItem('discord_role')
+    try {
+      const storedAuthStr = sessionStorage.getItem('discord_auth')
+      if (!storedAuthStr) return
+      
+      const storedAuth = JSON.parse(storedAuthStr)
+      const now = Date.now()
+      const authAge = now - storedAuth.timestamp
+      const FIVE_MINUTES_MS = 5 * 60 * 1000
+      
+      // Check if auth is still valid (within 5 minutes)
+      if (authAge > FIVE_MINUTES_MS) {
+        console.log('Stored Discord auth expired (>5 minutes), clearing...')
+        sessionStorage.removeItem('discord_auth')
+        return
+      }
+      
+      // Auth is still valid - restore user state
+      console.log('Restoring Discord auth from session storage (valid for', Math.round((FIVE_MINUTES_MS - authAge) / 1000), 'more seconds)')
+      setDiscordUser(storedAuth.user)
+      setGuildMember(storedAuth.member)
+      setHighestRole(storedAuth.highestRole)
+      
+      // Note: Roles will be re-verified server-side during minting
+      // The signature generation endpoints check roles in real-time
+    } catch (err) {
+      console.error('Error loading stored Discord auth:', err)
+      sessionStorage.removeItem('discord_auth')
+    }
   }, [])
 
   useEffect(() => {
@@ -152,11 +176,21 @@ export default function Home() {
         setGuildMember(event.data.member)
         setHighestRole(event.data.highestRole)
         setDiscordError(null)
+        
+        // Store auth in session storage with timestamp for 5-minute persistence
+        const authData = {
+          user: event.data.user,
+          member: event.data.member,
+          highestRole: event.data.highestRole,
+          timestamp: Date.now()
+        }
+        sessionStorage.setItem('discord_auth', JSON.stringify(authData))
       } else {
         setDiscordError(event.data.error || 'Не удалось авторизоваться через Discord')
         setDiscordUser(null)
         setGuildMember(null)
         setHighestRole(null)
+        sessionStorage.removeItem('discord_auth')
       }
       setDiscordLoading(false)
     }
@@ -277,10 +311,8 @@ export default function Home() {
     setDiscordLoading(false)
     setIsAdmin(false)
     
-    // Clear any persisted state
-    localStorage.removeItem('discord_user')
-    localStorage.removeItem('discord_member')
-    localStorage.removeItem('discord_role')
+    // Clear session storage
+    sessionStorage.removeItem('discord_auth')
     sessionStorage.removeItem('discord_user_id')
     
     // Reset mint status

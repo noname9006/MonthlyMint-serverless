@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAccount, useWriteContract, useConfig } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
+import { ethers } from 'ethers'
 import { SBT_ABI } from '@/lib/sbt-abi'
 import { chainConfig } from '@/lib/chains'
 import { getMediaURI, ipfsToGateway } from '@/lib/media-config'
@@ -52,9 +53,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
   // Combine prop and local state to determine if minted
   const isMinted = alreadyMinted || localMinted
   
-  // Default values for removed fields
-  const metadata = 'student'
-  const credentialType = 'Education'
+  // Removed fields - using empty values for backward compatibility with contract
   const issuerName = 'Botanix'
 
   // Check if rendering in main page or modal context
@@ -191,8 +190,6 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
           contractAddress: NFT_CONTRACT_ADDRESS,
           transactionHash: txHash,
           roleName: tierName,
-          credentialType: credentialType,
-          metadata: metadata,
           mediaUri: tierMediaURI,
           levelName: tierName,
           monthName: tierMonthName,
@@ -273,9 +270,9 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userWalletAddress: address,
-          metadata: metadata,
+          metadata: '',  // Removed - using empty string for contract compatibility
           mediaURI: mediaURI,
-          credentialType: credentialType,
+          credentialType: '',  // Removed - using empty string for contract compatibility
           issuerName: issuerName,
           discordId: discordId,
           roleName: roleName,
@@ -318,9 +315,9 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
         functionName: 'mintWithSignature',
         args: [
           address,
-          metadata,
+          '',  // metadata - removed
           mediaURI,
-          credentialType,
+          '',  // credentialType - removed
           issuerName,
           BigInt(nonce),
           roleName,
@@ -459,9 +456,9 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
         }
 
         mintRequests.push({
-          metadata: metadata,
+          metadata: '',  // Removed - using empty string for contract compatibility
           mediaURI: tierMediaURI,
-          credentialType: credentialType,
+          credentialType: '',  // Removed - using empty string for contract compatibility
           issuerName: issuerName,
           roleName: tier.name,
           levelName: tier.name,
@@ -474,7 +471,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
       console.log(`Validating ${mintRequests.length} mint requests before batch mint...`)
       for (let i = 0; i < mintRequests.length; i++) {
         const req = mintRequests[i]
-        if (!req.mediaURI || !req.metadata || !req.credentialType || !req.issuerName || !req.levelName) {
+        if (!req.mediaURI || !req.issuerName || !req.levelName) {
           console.error(`✗ Invalid mint request at index ${i}:`, req)
           setError(`Invalid data for ${req.levelName || 'unknown tier'}`)
           setLoading(false)
@@ -487,9 +484,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
       console.log('Batch mint prepared with:', {
         tierCount: mintRequests.length,
         tiers: mintRequests.map(r => r.levelName),
-        mediaURIs: mintRequests.map(r => r.mediaURI),
-        allHaveMetadata: mintRequests.every(r => r.metadata),
-        allHaveCredentials: mintRequests.every(r => r.credentialType)
+        mediaURIs: mintRequests.map(r => r.mediaURI)
       })
 
       // Get batch signatures
@@ -554,11 +549,9 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
       
       // Verify all data is properly populated AND matches original request
       for (let i = 0; i < expectedLength; i++) {
-        if (!data.mediaURIs[i] || !data.metadatas[i] || !data.credentialTypes[i] || !data.issuerNames[i] || !data.levelNames[i] || !data.monthNames[i] || !data.years[i]) {
+        if (!data.mediaURIs[i] || !data.issuerNames[i] || !data.levelNames[i] || !data.monthNames[i] || !data.years[i]) {
           console.error(`Missing data at index ${i}:`, {
             mediaURI: data.mediaURIs[i],
-            metadata: data.metadatas[i],
-            credentialType: data.credentialTypes[i],
             issuerName: data.issuerNames[i],
             levelName: data.levelNames[i],
             monthName: data.monthNames[i],
@@ -627,6 +620,34 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
         return
       }
 
+      // Extract tokenIds from BatchMinted event in the receipt
+      const batchMintedEvent = receipt.logs.find((log: any) => {
+        try {
+          // BatchMinted event signature: BatchMinted(address indexed to, uint256[] tokenIds, uint256 count)
+          const eventSignature = ethers.utils.keccak256(
+            ethers.utils.toUtf8Bytes('BatchMinted(address,uint256[],uint256)')
+          )
+          return log.topics[0] === eventSignature
+        } catch {
+          return false
+        }
+      })
+
+      let tokenIds: bigint[] = []
+      if (batchMintedEvent) {
+        try {
+          // Decode the event data to extract tokenIds array
+          const abiCoder = new ethers.utils.AbiCoder()
+          const decoded = abiCoder.decode(['uint256[]', 'uint256'], batchMintedEvent.data)
+          tokenIds = decoded[0] // First element is the tokenIds array
+          console.log(`✓ Extracted ${tokenIds.length} tokenIds from BatchMinted event:`, tokenIds.map((id: bigint) => id.toString()))
+        } catch (err) {
+          console.error('Failed to decode BatchMinted event:', err)
+        }
+      } else {
+        console.warn('BatchMinted event not found in receipt logs')
+      }
+
       // Log each mint individually with retry logic to ensure all mints are recorded
       // Constants for retry configuration
       const MAX_RETRY_DELAY_MS = 5000 // Cap retry delay at 5 seconds
@@ -647,9 +668,8 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
                 walletAddress: address,
                 contractAddress: NFT_CONTRACT_ADDRESS,
                 transactionHash: txHash,
+                tokenId: tokenIds[index] ? tokenIds[index].toString() : undefined, // Include tokenId if available
                 roleName: request.levelName,
-                credentialType: request.credentialType,
-                metadata: request.metadata,
                 mediaUri: request.mediaURI,
                 levelName: request.levelName,
                 monthName: request.monthName,
@@ -661,7 +681,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
             const result = await response.json()
             
             if (result.success) {
-              console.log(`Successfully logged mint for ${request.levelName} (attempt ${attempt + 1})`)
+              console.log(`Successfully logged mint for ${request.levelName} with tokenId ${tokenIds[index]?.toString() || 'N/A'} (attempt ${attempt + 1})`)
               return { success: true }
             } else {
               console.warn(`Failed to log mint for ${request.levelName} (attempt ${attempt + 1}): ${result.error}`)
