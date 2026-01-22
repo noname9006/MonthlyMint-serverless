@@ -627,11 +627,15 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
       }
 
       // Log each mint individually with retry logic to ensure all mints are recorded
-      // Helper function to calculate exponential backoff delay with cap at 5 seconds
-      const getRetryDelay = (attempt: number): number => Math.min(1000 * Math.pow(2, attempt), 5000)
+      // Constants for retry configuration
+      const MAX_RETRY_DELAY_MS = 5000 // Cap retry delay at 5 seconds
+      const MAX_RETRIES = 3
+      
+      // Helper function to calculate exponential backoff delay with cap
+      const getRetryDelay = (attempt: number): number => Math.min(1000 * Math.pow(2, attempt), MAX_RETRY_DELAY_MS)
       
       // Helper function to log a single mint with retry
-      const logMintWithRetry = async (request: any, index: number, retries = 3): Promise<{ success: boolean; error?: string }> => {
+      const logMintWithRetry = async (request: any, index: number, retries = MAX_RETRIES): Promise<{ success: boolean; error?: string }> => {
         for (let attempt = 0; attempt < retries; attempt++) {
           try {
             const response = await fetch('/api/nft/log-mint', {

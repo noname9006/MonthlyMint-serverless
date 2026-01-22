@@ -112,6 +112,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const monthNames: string[] = []
     const years: number[] = []
 
+    // ABI encoding types for deterministic request ID generation
+    const REQUEST_ID_ENCODING_TYPES = ['address', 'uint256', 'string', 'string', 'uint256']
+
     for (let i = 0; i < mintRequests.length; i++) {
       const request = mintRequests[i]
       
@@ -131,7 +134,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // This ensures reproducibility and avoids potential collision from pure random bytes
       const requestId = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'string', 'string', 'uint256'],
+          REQUEST_ID_ENCODING_TYPES,
           [userWalletAddress, currentNonce, request.levelName, request.monthName, request.year]
         )
       )
