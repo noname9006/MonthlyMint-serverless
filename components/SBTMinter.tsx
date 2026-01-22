@@ -89,18 +89,18 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
 
   // Check for existing cooldown in localStorage on mount
   useEffect(() => {
-    if (discordId && roleName && currentMonth) {
-      const cooldownKey = `mint_cooldown_${discordId}_${roleName}_${currentMonth.year}_${currentMonth.monthName}`
-      const storedCooldown = localStorage.getItem(cooldownKey)
-      if (storedCooldown) {
-        const cooldownTimestamp = parseInt(storedCooldown, 10)
-        const now = Date.now()
-        if (cooldownTimestamp > now) {
-          setCooldownEnd(cooldownTimestamp)
-        } else {
-          // Cooldown expired, remove it
-          localStorage.removeItem(cooldownKey)
-        }
+    if (typeof window === 'undefined' || !discordId || !roleName || !currentMonth) return
+    
+    const cooldownKey = `mint_cooldown_${discordId}_${roleName}_${currentMonth.year}_${currentMonth.monthName}`
+    const storedCooldown = localStorage.getItem(cooldownKey)
+    if (storedCooldown) {
+      const cooldownTimestamp = parseInt(storedCooldown, 10)
+      const now = Date.now()
+      if (cooldownTimestamp > now) {
+        setCooldownEnd(cooldownTimestamp)
+      } else {
+        // Cooldown expired, remove it
+        localStorage.removeItem(cooldownKey)
       }
     }
   }, [discordId, roleName, currentMonth])
@@ -120,7 +120,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
       if (remaining === 0) {
         setCooldownEnd(null)
         // Clear from localStorage
-        if (discordId && roleName && currentMonth) {
+        if (typeof window !== 'undefined' && discordId && roleName && currentMonth) {
           const cooldownKey = `mint_cooldown_${discordId}_${roleName}_${currentMonth.year}_${currentMonth.monthName}`
           localStorage.removeItem(cooldownKey)
         }
@@ -307,12 +307,6 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
       return
     }
 
-    // Set 30-second cooldown immediately
-    const cooldownTimestamp = Date.now() + 30000 // 30 seconds
-    setCooldownEnd(cooldownTimestamp)
-    const cooldownKey = `mint_cooldown_${discordId}_${roleName}_${currentMonth.year}_${currentMonth.monthName}`
-    localStorage.setItem(cooldownKey, cooldownTimestamp.toString())
-
     setLoading(true)
     setError(null)
     setSuccess(null)
@@ -362,6 +356,14 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
       const signature = data.signature
       const nonce = data.nonce
       const requestId = data.requestId
+
+      // Set 30-second cooldown after successful signature generation
+      if (typeof window !== 'undefined') {
+        const cooldownTimestamp = Date.now() + 30000 // 30 seconds
+        setCooldownEnd(cooldownTimestamp)
+        const cooldownKey = `mint_cooldown_${discordId}_${roleName}_${currentMonth.year}_${currentMonth.monthName}`
+        localStorage.setItem(cooldownKey, cooldownTimestamp.toString())
+      }
 
       // Then, mint with the signature and capture the transaction hash
       const txHash = await mintWithSignatureAsync({
