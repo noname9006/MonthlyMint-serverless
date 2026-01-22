@@ -50,6 +50,10 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
   const [mediaURI, setMediaURI] = useState<string | null>(null)
   const [isLoadingMedia, setIsLoadingMedia] = useState(false)
   
+  // Cooldown state - 30 second cooldown after mint initiation
+  const [cooldownEnd, setCooldownEnd] = useState<number | null>(null)
+  const [cooldownRemaining, setCooldownRemaining] = useState(0)
+  
   // Combine prop and local state to determine if minted
   const isMinted = alreadyMinted || localMinted
   
@@ -82,6 +86,51 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
   useEffect(() => {
     fetchCurrentMonth()
   }, [])
+
+  // Check for existing cooldown in localStorage on mount
+  useEffect(() => {
+    if (discordId && roleName && currentMonth) {
+      const cooldownKey = `mint_cooldown_${discordId}_${roleName}_${currentMonth.year}_${currentMonth.monthName}`
+      const storedCooldown = localStorage.getItem(cooldownKey)
+      if (storedCooldown) {
+        const cooldownTimestamp = parseInt(storedCooldown, 10)
+        const now = Date.now()
+        if (cooldownTimestamp > now) {
+          setCooldownEnd(cooldownTimestamp)
+        } else {
+          // Cooldown expired, remove it
+          localStorage.removeItem(cooldownKey)
+        }
+      }
+    }
+  }, [discordId, roleName, currentMonth])
+
+  // Cooldown timer - update remaining seconds every second
+  useEffect(() => {
+    if (!cooldownEnd) {
+      setCooldownRemaining(0)
+      return
+    }
+
+    const updateCooldown = () => {
+      const now = Date.now()
+      const remaining = Math.max(0, Math.ceil((cooldownEnd - now) / 1000))
+      setCooldownRemaining(remaining)
+      
+      if (remaining === 0) {
+        setCooldownEnd(null)
+        // Clear from localStorage
+        if (discordId && roleName && currentMonth) {
+          const cooldownKey = `mint_cooldown_${discordId}_${roleName}_${currentMonth.year}_${currentMonth.monthName}`
+          localStorage.removeItem(cooldownKey)
+        }
+      }
+    }
+
+    updateCooldown()
+    const interval = setInterval(updateCooldown, 1000)
+    return () => clearInterval(interval)
+  }, [cooldownEnd, discordId, roleName, currentMonth])
 
   const fetchCurrentMonth = async () => {
     try {
@@ -257,6 +306,12 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
       setError('Media URI not available for current month')
       return
     }
+
+    // Set 30-second cooldown immediately
+    const cooldownTimestamp = Date.now() + 30000 // 30 seconds
+    setCooldownEnd(cooldownTimestamp)
+    const cooldownKey = `mint_cooldown_${discordId}_${roleName}_${currentMonth.year}_${currentMonth.monthName}`
+    localStorage.setItem(cooldownKey, cooldownTimestamp.toString())
 
     setLoading(true)
     setError(null)
@@ -733,7 +788,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
   }
 
   // Computed variables for better readability
-  const isMintButtonDisabled = isMinted || loading || !address || !!pendingTxHash || isLoadingMonth || isLoadingMedia || !mediaURI
+  const isMintButtonDisabled = isMinted || loading || !address || !!pendingTxHash || isLoadingMonth || isLoadingMedia || !mediaURI || cooldownRemaining > 0
 
   return(
     <div className={isMainPage ? 'card-cyber p-6 mt-8' : ''}>
@@ -770,7 +825,12 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
               disabled={isMintButtonDisabled}
               className="btn-cyber w-full"
             >
-              {isLoadingMonth || isLoadingMedia ? 'Loading...' : loading ? 'Minting...' : pendingTxHash ? 'Minting...' : isMinted ? 'Minted, see you next month!' : 'Mint your NFT (Freemint)'}
+              {isLoadingMonth || isLoadingMedia ? 'Loading...' : 
+               loading ? 'Minting...' : 
+               pendingTxHash ? 'Minting...' : 
+               cooldownRemaining > 0 ? `Wait ${cooldownRemaining}s...` :
+               isMinted ? 'Minted, see you next month' : 
+               'Mint your NFT (Freemint)'}
             </button>
           </div>
 

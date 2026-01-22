@@ -353,15 +353,17 @@ export default function Home() {
                 <p className="text-text-secondary mb-4">Sign in with Discord to confirm Botanix server membership.</p>
 
                 <div className="flex gap-3">
-                  <button 
-                    onClick={openDiscordPopup} 
-                    disabled={discordLoading} 
-                    className="btn-cyber flex-1"
-                  >
-                    {discordLoading ? 'Waiting for Discord…' : isDiscordVerified ? 'Re-check' : 'Sign in with Discord'}
-                  </button>
+                  {!isDiscordVerified && (
+                    <button 
+                      onClick={openDiscordPopup} 
+                      disabled={discordLoading} 
+                      className="btn-cyber flex-1"
+                    >
+                      {discordLoading ? 'Waiting for Discord…' : 'Sign in with Discord'}
+                    </button>
+                  )}
                   {isDiscordVerified && (
-                    <button onClick={handleDiscordLogout} className="btn-cyber-secondary">
+                    <button onClick={handleDiscordLogout} className="btn-cyber-secondary flex-1">
                       Logout
                     </button>
                   )}
@@ -416,9 +418,6 @@ export default function Home() {
                     {isDiscordVerified ? 'Available' : 'Locked'}
                   </span>
                 </div>
-                <p className="text-text-secondary mb-4">
-                  After Discord verification, connect your EVM wallet via WalletConnect. Network: {chainConfig.name} (id {chainConfig.id}).
-                </p>
                 <div className={isDiscordVerified ? '' : 'opacity-40 pointer-events-none'}>
                   <ConnectButton label="Connect wallet" showBalance={false} chainStatus="name" />
                 </div>
@@ -449,11 +448,6 @@ export default function Home() {
                       <>
                         <p className="text-text-secondary mb-4">
                           Your level: <span className="text-accent font-bold">{highestRole.name}</span>
-                        </p>
-                        <p className="text-text-secondary mb-4">
-                          {guildMember 
-                            ? 'You are a member of the guild and have a valid role. Click below to proceed to mint your NFT.'
-                            : 'Checking guild membership...'}
                         </p>
                         <button
                           onClick={() => setShowMintModal(true)}

@@ -339,7 +339,7 @@ export default function AdminDashboard() {
               {/* Media Entries */}
               <div className="space-y-4">
                 {mediaEntries.map(entry => (
-                  <div key={entry.levelName} className="card-cyber p-4">
+                  <div key={entry.levelName} className="pb-4 border-b border-accent border-opacity-30 last:border-0">
                     <div className="flex gap-4 flex-wrap items-start">
                       <div className="flex-1 min-w-[300px]">
                         <label className="block text-text-primary font-bold mb-2">{entry.levelName}</label>
