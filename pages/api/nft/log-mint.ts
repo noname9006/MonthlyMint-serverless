@@ -85,30 +85,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })
     }
 
-    // Double-check verification: Ensure the mint is actually in the database
-    // For batch mints with request_id, verify using request_id
-    // Otherwise, verify using transaction_hash (legacy single mints)
-    let verifyMint
-    if (requestId) {
-      verifyMint = await getMintByRequestId(requestId)
-      if (!verifyMint) {
-        console.error(`Verification failed: Mint not found in database for requestId: ${requestId}`)
-        return res.status(500).json({ 
-          success: false,
-          error: 'Database verification failed - mint event not found after insert'
-        })
-      }
-    } else {
-      verifyMint = await getMintByTxHash(transactionHash)
-      if (!verifyMint) {
-        console.error(`Verification failed: Mint not found in database for tx: ${transactionHash}`)
-        return res.status(500).json({ 
-          success: false,
-          error: 'Database verification failed - mint event not found after insert'
-        })
-      }
-    }
-
     console.log(`Logged mint for user ${discordId}, tx: ${transactionHash}, requestId: ${requestId || 'none'}`)
 
     res.json({

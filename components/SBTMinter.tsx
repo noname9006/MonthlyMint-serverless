@@ -551,7 +551,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
         return
       }
       
-      // Verify all data is properly populated
+      // Verify all data is properly populated AND matches original request
       for (let i = 0; i < expectedLength; i++) {
         if (!data.mediaURIs[i] || !data.metadatas[i] || !data.credentialTypes[i] || !data.issuerNames[i] || !data.levelNames[i] || !data.monthNames[i] || !data.years[i]) {
           console.error(`Missing data at index ${i}:`, {
@@ -564,6 +564,21 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
             year: data.years[i]
           })
           setError(`Missing required data for tier at index ${i}`)
+          setLoading(false)
+          return
+        }
+        
+        // Verify data alignment: ensure response matches request order
+        if (data.levelNames[i] !== mintRequests[i].levelName) {
+          console.error(`Tier name mismatch at index ${i}: expected ${mintRequests[i].levelName}, got ${data.levelNames[i]}`)
+          setError(`Data mismatch: tier names don't match between request and response`)
+          setLoading(false)
+          return
+        }
+        
+        if (data.mediaURIs[i] !== mintRequests[i].mediaURI) {
+          console.error(`Media URI mismatch at index ${i}: expected ${mintRequests[i].mediaURI}, got ${data.mediaURIs[i]}`)
+          setError(`Data mismatch: media URIs don't match between request and response`)
           setLoading(false)
           return
         }
@@ -612,8 +627,8 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
       }
 
       // Log each mint individually with retry logic to ensure all mints are recorded
-      // Helper function to calculate exponential backoff delay
-      const getRetryDelay = (attempt: number): number => 1000 * Math.pow(2, attempt)
+      // Helper function to calculate exponential backoff delay with cap at 5 seconds
+      const getRetryDelay = (attempt: number): number => Math.min(1000 * Math.pow(2, attempt), 5000)
       
       // Helper function to log a single mint with retry
       const logMintWithRetry = async (request: any, index: number, retries = 3): Promise<{ success: boolean; error?: string }> => {
@@ -663,13 +678,11 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
         }
       }
       
-      // Log all mints sequentially to avoid race conditions
-      const logResults: Array<{ success: boolean; error?: string }> = []
-      for (let index = 0; index < mintRequests.length; index++) {
-        const request = mintRequests[index]
-        const result = await logMintWithRetry(request, index)
-        logResults.push(result)
-      }
+      // Log all mints in parallel to avoid blocking on failures
+      console.log(`Logging ${mintRequests.length} mints in parallel...`)
+      const logResults: Array<{ success: boolean; error?: string }> = await Promise.all(
+        mintRequests.map((request, index) => logMintWithRetry(request, index))
+      )
       
       // Count successful and failed logs
       const successfulLogs = logResults.filter(r => r.success).length

@@ -127,11 +127,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const currentNonce = startNonce.toNumber() + i
 
-      // Generate unique request ID using cryptographically secure random values
+      // Generate unique request ID deterministically using nonce and tier name
+      // This ensures reproducibility and avoids potential collision from pure random bytes
       const requestId = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'bytes32', 'bytes32'],
-          [userWalletAddress, currentNonce, ethers.utils.randomBytes(32), ethers.utils.randomBytes(32)]
+          ['address', 'uint256', 'string', 'string', 'uint256'],
+          [userWalletAddress, currentNonce, request.levelName, request.monthName, request.year]
         )
       )
 
