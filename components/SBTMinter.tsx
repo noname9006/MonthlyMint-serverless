@@ -9,6 +9,10 @@ import { getMediaURI, ipfsToGateway } from '@/lib/media-config'
 // Single NFT contract address for all roles
 const NFT_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS || ''
 
+// Cooldown constants
+const COOLDOWN_DURATION_MS = 30000 // 30 seconds
+const MS_TO_SECONDS = 1000
+
 interface SBTMinterProps {
   discordId: string
   roleName: string
@@ -24,6 +28,11 @@ interface UnmintedLowerTier {
   id: string
   name: string
   priority: number
+}
+
+// Helper function to generate cooldown storage key
+function getCooldownKey(discordId: string, roleName: string, year: number, monthName: string): string {
+  return `mint_cooldown_${discordId}_${roleName}_${year}_${monthName}`
 }
 
 export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinted = false, hasLowerTierAvailable = false }: SBTMinterProps) {
@@ -49,6 +58,10 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
   // Media URI state - fetch from database
   const [mediaURI, setMediaURI] = useState<string | null>(null)
   const [isLoadingMedia, setIsLoadingMedia] = useState(false)
+  
+  // Cooldown state - 30 second cooldown after mint initiation
+  const [cooldownEnd, setCooldownEnd] = useState<number | null>(null)
+  const [cooldownRemaining, setCooldownRemaining] = useState(0)
   
   // Combine prop and local state to determine if minted
   const isMinted = alreadyMinted || localMinted
@@ -82,6 +95,51 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
   useEffect(() => {
     fetchCurrentMonth()
   }, [])
+
+  // Check for existing cooldown in localStorage on mount
+  useEffect(() => {
+    if (typeof window === 'undefined' || !discordId || !roleName || !currentMonth) return
+    
+    const cooldownKey = getCooldownKey(discordId, roleName, currentMonth.year, currentMonth.monthName)
+    const storedCooldown = localStorage.getItem(cooldownKey)
+    if (storedCooldown) {
+      const cooldownTimestamp = parseInt(storedCooldown, 10)
+      const now = Date.now()
+      if (cooldownTimestamp > now) {
+        setCooldownEnd(cooldownTimestamp)
+      } else {
+        // Cooldown expired, remove it
+        localStorage.removeItem(cooldownKey)
+      }
+    }
+  }, [discordId, roleName, currentMonth])
+
+  // Cooldown timer - update remaining seconds every second
+  useEffect(() => {
+    if (!cooldownEnd) {
+      setCooldownRemaining(0)
+      return
+    }
+
+    const updateCooldown = () => {
+      const now = Date.now()
+      const remaining = Math.max(0, Math.ceil((cooldownEnd - now) / MS_TO_SECONDS))
+      setCooldownRemaining(remaining)
+      
+      if (remaining === 0) {
+        setCooldownEnd(null)
+        // Clear from localStorage
+        if (typeof window !== 'undefined' && discordId && roleName && currentMonth) {
+          const cooldownKey = getCooldownKey(discordId, roleName, currentMonth.year, currentMonth.monthName)
+          localStorage.removeItem(cooldownKey)
+        }
+      }
+    }
+
+    updateCooldown()
+    const interval = setInterval(updateCooldown, MS_TO_SECONDS)
+    return () => clearInterval(interval)
+  }, [cooldownEnd, discordId, roleName, currentMonth])
 
   const fetchCurrentMonth = async () => {
     try {
@@ -307,6 +365,14 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
       const signature = data.signature
       const nonce = data.nonce
       const requestId = data.requestId
+
+      // Set cooldown after successful signature generation
+      if (typeof window !== 'undefined') {
+        const cooldownTimestamp = Date.now() + COOLDOWN_DURATION_MS
+        setCooldownEnd(cooldownTimestamp)
+        const cooldownKey = getCooldownKey(discordId, roleName, currentMonth.year, currentMonth.monthName)
+        localStorage.setItem(cooldownKey, cooldownTimestamp.toString())
+      }
 
       // Then, mint with the signature and capture the transaction hash
       const txHash = await mintWithSignatureAsync({
@@ -733,7 +799,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
   }
 
   // Computed variables for better readability
-  const isMintButtonDisabled = isMinted || loading || !address || !!pendingTxHash || isLoadingMonth || isLoadingMedia || !mediaURI
+  const isMintButtonDisabled = isMinted || loading || !address || !!pendingTxHash || isLoadingMonth || isLoadingMedia || !mediaURI || cooldownRemaining > 0
 
   return(
     <div className={isMainPage ? 'card-cyber p-6 mt-8' : ''}>
@@ -770,7 +836,12 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
               disabled={isMintButtonDisabled}
               className="btn-cyber w-full"
             >
-              {isLoadingMonth || isLoadingMedia ? 'Loading...' : loading ? 'Minting...' : pendingTxHash ? 'Minting...' : isMinted ? 'Minted, see you next month!' : 'Mint your NFT (Freemint)'}
+              {isLoadingMonth || isLoadingMedia ? 'Loading...' : 
+               loading ? 'Minting...' : 
+               pendingTxHash ? 'Minting...' : 
+               cooldownRemaining > 0 ? `Wait ${cooldownRemaining}s...` :
+               isMinted ? 'Minted, see you next month' : 
+               'Mint your NFT (Freemint)'}
             </button>
           </div>
 
