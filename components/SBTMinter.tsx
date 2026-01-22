@@ -9,6 +9,10 @@ import { getMediaURI, ipfsToGateway } from '@/lib/media-config'
 // Single NFT contract address for all roles
 const NFT_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS || ''
 
+// Cooldown constants
+const COOLDOWN_DURATION_MS = 30000 // 30 seconds
+const MS_TO_SECONDS = 1000
+
 interface SBTMinterProps {
   discordId: string
   roleName: string
@@ -24,6 +28,11 @@ interface UnmintedLowerTier {
   id: string
   name: string
   priority: number
+}
+
+// Helper function to generate cooldown storage key
+function getCooldownKey(discordId: string, roleName: string, year: number, monthName: string): string {
+  return `mint_cooldown_${discordId}_${roleName}_${year}_${monthName}`
 }
 
 export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinted = false, hasLowerTierAvailable = false }: SBTMinterProps) {
@@ -91,7 +100,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
   useEffect(() => {
     if (typeof window === 'undefined' || !discordId || !roleName || !currentMonth) return
     
-    const cooldownKey = `mint_cooldown_${discordId}_${roleName}_${currentMonth.year}_${currentMonth.monthName}`
+    const cooldownKey = getCooldownKey(discordId, roleName, currentMonth.year, currentMonth.monthName)
     const storedCooldown = localStorage.getItem(cooldownKey)
     if (storedCooldown) {
       const cooldownTimestamp = parseInt(storedCooldown, 10)
@@ -114,21 +123,21 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
 
     const updateCooldown = () => {
       const now = Date.now()
-      const remaining = Math.max(0, Math.ceil((cooldownEnd - now) / 1000))
+      const remaining = Math.max(0, Math.ceil((cooldownEnd - now) / MS_TO_SECONDS))
       setCooldownRemaining(remaining)
       
       if (remaining === 0) {
         setCooldownEnd(null)
         // Clear from localStorage
         if (typeof window !== 'undefined' && discordId && roleName && currentMonth) {
-          const cooldownKey = `mint_cooldown_${discordId}_${roleName}_${currentMonth.year}_${currentMonth.monthName}`
+          const cooldownKey = getCooldownKey(discordId, roleName, currentMonth.year, currentMonth.monthName)
           localStorage.removeItem(cooldownKey)
         }
       }
     }
 
     updateCooldown()
-    const interval = setInterval(updateCooldown, 1000)
+    const interval = setInterval(updateCooldown, MS_TO_SECONDS)
     return () => clearInterval(interval)
   }, [cooldownEnd, discordId, roleName, currentMonth])
 
@@ -357,11 +366,11 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
       const nonce = data.nonce
       const requestId = data.requestId
 
-      // Set 30-second cooldown after successful signature generation
+      // Set cooldown after successful signature generation
       if (typeof window !== 'undefined') {
-        const cooldownTimestamp = Date.now() + 30000 // 30 seconds
+        const cooldownTimestamp = Date.now() + COOLDOWN_DURATION_MS
         setCooldownEnd(cooldownTimestamp)
-        const cooldownKey = `mint_cooldown_${discordId}_${roleName}_${currentMonth.year}_${currentMonth.monthName}`
+        const cooldownKey = getCooldownKey(discordId, roleName, currentMonth.year, currentMonth.monthName)
         localStorage.setItem(cooldownKey, cooldownTimestamp.toString())
       }
 
