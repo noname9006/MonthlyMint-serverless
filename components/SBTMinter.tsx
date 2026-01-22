@@ -403,7 +403,11 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
         year: number
       }> = []
       
+      console.log(`Preparing batch mint for ${unmintedLowerTiers.length} lower tiers`)
+      
       for (const tier of unmintedLowerTiers) {
+        console.log(`Fetching media for tier: ${tier.name}, month: ${currentMonth.monthName}, year: ${currentMonth.year}`)
+        
         // Fetch media URI for each tier
         const mediaResponse = await fetch('/api/nft/get-media', {
           method: 'POST',
@@ -421,16 +425,34 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
           const mediaData = await mediaResponse.json()
           if (mediaData.success && mediaData.ipfsCid) {
             tierMediaURI = cidToIpfsUri(mediaData.ipfsCid)
+            console.log(`✓ Media found in database for ${tier.name}: ${tierMediaURI}`)
+          } else {
+            console.warn(`Database media fetch returned no CID for ${tier.name}`)
           }
+        } else {
+          console.warn(`Database media fetch failed for ${tier.name}: ${mediaResponse.status}`)
         }
         
         // Fallback to environment variables if database fetch failed
         if (!tierMediaURI) {
           tierMediaURI = getMediaURI(tier.name, currentMonth.year, currentMonth.monthName)
+          if (tierMediaURI) {
+            console.log(`✓ Media found in environment config for ${tier.name}: ${tierMediaURI}`)
+          } else {
+            console.error(`✗ No media found for ${tier.name} in database or environment config`)
+          }
         }
         
         if (!tierMediaURI) {
           setError(`Media not available for ${tier.name}`)
+          setLoading(false)
+          return
+        }
+        
+        // Validate IPFS URI format
+        if (!tierMediaURI.startsWith('ipfs://')) {
+          console.error(`✗ Invalid media URI format for ${tier.name}: ${tierMediaURI}`)
+          setError(`Invalid media URI format for ${tier.name}`)
           setLoading(false)
           return
         }
@@ -446,6 +468,28 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
           year: currentMonth.year,
         })
       }
+      
+      // Final validation: ensure all requests have valid data
+      console.log(`Validating ${mintRequests.length} mint requests before batch mint...`)
+      for (let i = 0; i < mintRequests.length; i++) {
+        const req = mintRequests[i]
+        if (!req.mediaURI || !req.metadata || !req.credentialType || !req.issuerName || !req.levelName) {
+          console.error(`✗ Invalid mint request at index ${i}:`, req)
+          setError(`Invalid data for ${req.levelName || 'unknown tier'}`)
+          setLoading(false)
+          return
+        }
+      }
+      console.log(`✓ All ${mintRequests.length} mint requests validated successfully`)
+      
+      // Log the prepared batch mint data for debugging
+      console.log('Batch mint prepared with:', {
+        tierCount: mintRequests.length,
+        tiers: mintRequests.map(r => r.levelName),
+        mediaURIs: mintRequests.map(r => r.mediaURI),
+        allHaveMetadata: mintRequests.every(r => r.metadata),
+        allHaveCredentials: mintRequests.every(r => r.credentialType)
+      })
 
       // Get batch signatures
       const response = await fetch('/api/nft/generate-batch-mint-signature', {
@@ -483,6 +527,47 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
         return
       }
       
+      // Verify all arrays have the same length
+      const expectedLength = mintRequests.length
+      if (data.signatures.length !== expectedLength ||
+          data.requestIds.length !== expectedLength ||
+          data.years.length !== expectedLength ||
+          data.metadatas.length !== expectedLength ||
+          data.mediaURIs.length !== expectedLength ||
+          data.credentialTypes.length !== expectedLength ||
+          data.issuerNames.length !== expectedLength ||
+          data.levelNames.length !== expectedLength ||
+          data.monthNames.length !== expectedLength) {
+        console.error('Array length mismatch in signature response:', {
+          expected: expectedLength,
+          signatures: data.signatures.length,
+          requestIds: data.requestIds.length,
+          mediaURIs: data.mediaURIs.length,
+          metadatas: data.metadatas.length,
+          credentialTypes: data.credentialTypes.length
+        })
+        setError('Data mismatch in batch mint signature response')
+        setLoading(false)
+        return
+      }
+      
+      // Verify all data is properly populated
+      for (let i = 0; i < expectedLength; i++) {
+        if (!data.mediaURIs[i] || !data.metadatas[i] || !data.credentialTypes[i] || !data.issuerNames[i]) {
+          console.error(`Missing data at index ${i}:`, {
+            mediaURI: data.mediaURIs[i],
+            metadata: data.metadatas[i],
+            credentialType: data.credentialTypes[i],
+            issuerName: data.issuerNames[i]
+          })
+          setError(`Missing required data for tier at index ${i}`)
+          setLoading(false)
+          return
+        }
+      }
+      
+      console.log(`✓ Batch signature response validated: all ${expectedLength} entries have complete data`)
+      
       // Execute batch mint on-chain
       const txHash = await mintWithSignatureAsync({
         address: NFT_CONTRACT_ADDRESS as `0x${string}`,
@@ -505,49 +590,93 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
         ],
       })
 
+      console.log(`✓ Batch mint transaction submitted: ${txHash}`)
+      console.log(`Waiting for transaction confirmation...`)
+
       // Wait for transaction confirmation
-      await waitForTransactionReceipt(config, {
+      const receipt = await waitForTransactionReceipt(config, {
         hash: txHash,
       })
 
-      // Log each mint individually using Promise.allSettled to attempt all logs
-      const logPromises = mintRequests.map((request, index) => 
-        fetch('/api/nft/log-mint', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            discordId: discordId,
-            walletAddress: address,
-            contractAddress: NFT_CONTRACT_ADDRESS,
-            transactionHash: txHash,
-            roleName: request.levelName,
-            credentialType: request.credentialType,
-            metadata: request.metadata,
-            mediaUri: request.mediaURI,
-            levelName: request.levelName,
-            monthName: request.monthName,
-            year: request.year,
-            requestId: data.requestIds[index],
-          }),
-        }).then(res => res.json()).catch(err => ({
-          success: false,
-          error: err.message
-        }))
-      )
+      console.log(`✓ Batch mint transaction confirmed in block ${receipt.blockNumber}`)
+      console.log(`Transaction status: ${receipt.status}`)
       
-      const logResults = await Promise.allSettled(logPromises)
-      
-      // Check if any logs failed
-      const failedLogs = logResults.filter(result => 
-        result.status === 'rejected' || 
-        (result.status === 'fulfilled' && !result.value.success)
-      )
-      
-      if (failedLogs.length > 0) {
-        console.warn(`${failedLogs.length} mint logs failed, but mints succeeded on-chain`)
+      if (receipt.status !== 'success') {
+        console.error('Transaction failed on-chain')
+        setError('Batch mint transaction failed')
+        setLoading(false)
+        return
       }
 
-      setSuccess(`Successfully minted ${mintRequests.length} lower-tier NFTs!`)
+      // Log each mint individually with retry logic to ensure all mints are recorded
+      // Helper function to log a single mint with retry
+      const logMintWithRetry = async (request: any, index: number, retries = 3): Promise<{ success: boolean; error?: string }> => {
+        for (let attempt = 0; attempt < retries; attempt++) {
+          try {
+            const response = await fetch('/api/nft/log-mint', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                discordId: discordId,
+                walletAddress: address,
+                contractAddress: NFT_CONTRACT_ADDRESS,
+                transactionHash: txHash,
+                roleName: request.levelName,
+                credentialType: request.credentialType,
+                metadata: request.metadata,
+                mediaUri: request.mediaURI,
+                levelName: request.levelName,
+                monthName: request.monthName,
+                year: request.year,
+                requestId: data.requestIds[index],
+              }),
+            })
+            
+            const result = await response.json()
+            
+            if (result.success) {
+              console.log(`Successfully logged mint for ${request.levelName} (attempt ${attempt + 1})`)
+              return { success: true }
+            } else {
+              console.warn(`Failed to log mint for ${request.levelName} (attempt ${attempt + 1}): ${result.error}`)
+              if (attempt < retries - 1) {
+                // Wait before retry (exponential backoff)
+                await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)))
+              }
+            }
+          } catch (err) {
+            console.error(`Error logging mint for ${request.levelName} (attempt ${attempt + 1}):`, err)
+            if (attempt < retries - 1) {
+              // Wait before retry (exponential backoff)
+              await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)))
+            }
+          }
+        }
+        
+        return { 
+          success: false, 
+          error: `Failed after ${retries} attempts` 
+        }
+      }
+      
+      // Log all mints with retry logic
+      const logResults = await Promise.all(
+        mintRequests.map((request, index) => logMintWithRetry(request, index))
+      )
+      
+      // Count successful and failed logs
+      const successfulLogs = logResults.filter(r => r.success).length
+      const failedLogs = logResults.filter(r => !r.success)
+      
+      console.log(`Batch mint logging complete: ${successfulLogs}/${mintRequests.length} successful`)
+      
+      if (failedLogs.length > 0) {
+        console.error(`${failedLogs.length} mint logs failed after retries. These mints succeeded on-chain but were not recorded in the database.`)
+        // Show warning but don't fail the operation
+        setSuccess(`Successfully minted ${mintRequests.length} lower-tier NFTs! (Note: ${failedLogs.length} log entries failed - please contact support)`)
+      } else {
+        setSuccess(`Successfully minted ${mintRequests.length} lower-tier NFTs!`)
+      }
       // Refresh the unminted tiers list
       await fetchUnmintedLowerTiers()
     } catch (err) {
