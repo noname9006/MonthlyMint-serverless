@@ -64,7 +64,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       year
     } = req.body
 
-    if (!userWalletAddress || !mediaURI || !credentialType || !issuerName) {
+    // Allow empty strings for metadata and credentialType (backward compatibility)
+    if (!userWalletAddress || !mediaURI || credentialType === undefined || credentialType === null || !issuerName) {
       return res.status(400).json({ error: 'Missing required fields' })
     }
 

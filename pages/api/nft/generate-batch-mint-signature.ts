@@ -118,8 +118,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     for (let i = 0; i < mintRequests.length; i++) {
       const request = mintRequests[i]
       
-      // Validate each request
-      if (!request.metadata || !request.mediaURI || !request.credentialType || 
+      // Validate each request - allow empty strings for metadata and credentialType (backward compatibility)
+      if (request.metadata === undefined || request.metadata === null ||
+          !request.mediaURI || 
+          request.credentialType === undefined || request.credentialType === null || 
           !request.issuerName || !request.levelName || !request.monthName || !request.year) {
         return res.status(400).json({ error: `Invalid mint request at index ${i}` })
       }
