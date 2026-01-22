@@ -553,15 +553,12 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
       
       // Verify all data is properly populated
       for (let i = 0; i < expectedLength; i++) {
-        if (!data.mediaURIs[i] || !data.metadatas[i] || !data.credentialTypes[i] || !data.issuerNames[i] || !data.levelNames[i] || !data.monthNames[i] || !data.years[i]) {
+        if (!data.mediaURIs[i] || !data.metadatas[i] || !data.credentialTypes[i] || !data.issuerNames[i]) {
           console.error(`Missing data at index ${i}:`, {
             mediaURI: data.mediaURIs[i],
             metadata: data.metadatas[i],
             credentialType: data.credentialTypes[i],
-            issuerName: data.issuerNames[i],
-            levelName: data.levelNames[i],
-            monthName: data.monthNames[i],
-            year: data.years[i]
+            issuerName: data.issuerNames[i]
           })
           setError(`Missing required data for tier at index ${i}`)
           setLoading(false)
@@ -663,13 +660,10 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
         }
       }
       
-      // Log all mints sequentially to avoid race conditions
-      const logResults: Array<{ success: boolean; error?: string }> = []
-      for (let index = 0; index < mintRequests.length; index++) {
-        const request = mintRequests[index]
-        const result = await logMintWithRetry(request, index)
-        logResults.push(result)
-      }
+      // Log all mints with retry logic
+      const logResults = await Promise.all(
+        mintRequests.map((request, index) => logMintWithRetry(request, index))
+      )
       
       // Count successful and failed logs
       const successfulLogs = logResults.filter(r => r.success).length
