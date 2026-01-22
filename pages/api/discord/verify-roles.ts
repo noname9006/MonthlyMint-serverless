@@ -24,23 +24,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })
     }
 
-    // For role verification, we need to fetch current roles from Discord
-    // However, we don't have an access token stored
-    // Instead, we'll rely on the signature verification during minting
-    // This endpoint primarily validates that the user exists in our DB
-    
-    // In a production environment, you might want to:
-    // 1. Store the access token securely (encrypted in DB)
-    // 2. Refresh it if needed
-    // 3. Fetch current roles from Discord API
-    
-    // For now, we'll return success if user exists
+    // For role verification, we would need to fetch current roles from Discord
+    // However, we don't have an access token stored for security reasons
     // The actual role check happens server-side during mint signature generation
+    // This endpoint serves as a user existence check
+    
+    // Note: In a production environment, you would want to:
+    // 1. Store refresh tokens securely (encrypted in DB)
+    // 2. Use refresh tokens to get new access tokens
+    // 3. Fetch current roles from Discord API with the access token
+    
     res.json({
       success: true,
-      member: null, // Roles will be verified during minting
-      highestRole: null, // Roles will be verified during minting
-      message: 'User verified, roles will be checked during minting'
+      userExists: true,
+      rolesVerified: false, // Roles NOT verified here
+      message: 'User exists in database. Roles will be verified server-side during minting.'
     })
   } catch (error) {
     console.error('Error verifying Discord roles:', error)
