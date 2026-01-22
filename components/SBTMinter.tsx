@@ -609,6 +609,9 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
       }
 
       // Log each mint individually with retry logic to ensure all mints are recorded
+      // Helper function to calculate exponential backoff delay
+      const getRetryDelay = (attempt: number): number => 1000 * Math.pow(2, attempt)
+      
       // Helper function to log a single mint with retry
       const logMintWithRetry = async (request: any, index: number, retries = 3): Promise<{ success: boolean; error?: string }> => {
         for (let attempt = 0; attempt < retries; attempt++) {
@@ -640,15 +643,13 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
             } else {
               console.warn(`Failed to log mint for ${request.levelName} (attempt ${attempt + 1}): ${result.error}`)
               if (attempt < retries - 1) {
-                // Wait before retry (exponential backoff)
-                await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)))
+                await new Promise(resolve => setTimeout(resolve, getRetryDelay(attempt)))
               }
             }
           } catch (err) {
             console.error(`Error logging mint for ${request.levelName} (attempt ${attempt + 1}):`, err)
             if (attempt < retries - 1) {
-              // Wait before retry (exponential backoff)
-              await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)))
+              await new Promise(resolve => setTimeout(resolve, getRetryDelay(attempt)))
             }
           }
         }
@@ -672,8 +673,8 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
       
       if (failedLogs.length > 0) {
         console.error(`${failedLogs.length} mint logs failed after retries. These mints succeeded on-chain but were not recorded in the database.`)
-        // Show warning but don't fail the operation
-        setSuccess(`Successfully minted ${mintRequests.length} lower-tier NFTs! (Note: ${failedLogs.length} log entries failed - please contact support)`)
+        // Show clear message about partial success
+        setSuccess(`All ${mintRequests.length} NFTs minted successfully! However, ${failedLogs.length} database ${failedLogs.length === 1 ? 'entry' : 'entries'} failed to save. Please contact support to update your records.`)
       } else {
         setSuccess(`Successfully minted ${mintRequests.length} lower-tier NFTs!`)
       }
