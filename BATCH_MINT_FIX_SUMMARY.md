@@ -148,6 +148,7 @@ const requestId = ethers.utils.keccak256(
 | `components/SBTMinter.tsx` | 571-585 | ✅ Added request-response alignment validation |
 | `components/SBTMinter.tsx` | 631-635 | ✅ Capped retry delays at 5 seconds |
 | `components/SBTMinter.tsx` | 685-689 | ✅ Parallelized database logging |
+| `components/SBTMinter.tsx` | 164, 200, 338 | ✅ Added requestId to single mint logging |
 | `pages/api/nft/log-mint.ts` | Removed 88-110 | ✅ Removed verification race condition |
 | `pages/api/nft/generate-batch-mint-signature.ts` | 106-138 | ✅ Deterministic request ID generation |
 

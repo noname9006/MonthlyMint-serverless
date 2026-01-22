@@ -161,7 +161,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
   }
 
   // Helper function to wait for transaction and log the mint
-  const waitForTransactionAndLog = async (txHash: `0x${string}`, tierName: string, tierMediaURI: string, tierMonthName: string, tierYear: number) => {
+  const waitForTransactionAndLog = async (txHash: `0x${string}`, tierName: string, tierMediaURI: string, tierMonthName: string, tierYear: number, requestId?: string) => {
     // Check if this transaction is already being logged (deduplication)
     if (loggingInProgress.has(txHash)) {
       console.log(`Transaction ${txHash} is already being logged, skipping duplicate request`)
@@ -197,6 +197,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
           levelName: tierName,
           monthName: tierMonthName,
           year: tierYear,
+          requestId: requestId,
         }),
       })
 
@@ -334,7 +335,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
       setPendingTxHash(txHash)
       
       // Wait for transaction and log it (don't await - let it run in background)
-      waitForTransactionAndLog(txHash, roleName, mediaURI, currentMonth.monthName, currentMonth.year).catch((err) => {
+      waitForTransactionAndLog(txHash, roleName, mediaURI, currentMonth.monthName, currentMonth.year, requestId).catch((err) => {
         console.error('Unhandled error in waitForTransactionAndLog:', err)
       })
     } catch (err) {
