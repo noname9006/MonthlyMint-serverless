@@ -85,8 +85,8 @@ export async function initDatabase(): Promise<void> {
         token_id TEXT,
         transaction_hash TEXT NOT NULL,
         role_name TEXT,
-        credential_type TEXT,
-        metadata TEXT,
+        credential_type TEXT,  -- Deprecated field, kept for backward compatibility
+        metadata TEXT,  -- Deprecated field, kept for backward compatibility
         media_uri TEXT,
         level INTEGER,
         level_name TEXT,

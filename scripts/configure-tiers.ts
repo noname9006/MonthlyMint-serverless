@@ -118,7 +118,7 @@ async function main() {
           yearValue: year,
           monthName,
           name: `${levelName} - ${monthName} ${year}`,
-          description: `Botanix Ambassador NFT for ${levelName} role in ${monthName} ${year}`,
+          description: `${levelName} - ${monthName} ${year}`,
           baseURI: '', // Can be set later or left empty to use mediaURI
           imageURI: '', // Can be set later or left empty to use mediaURI
           active: true, // Set to true to allow minting

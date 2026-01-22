@@ -579,7 +579,7 @@ contract BotanixAmbassadorNFTUnlimited is ERC721URIStorage, Ownable {
 
         string memory description = bytes(tier.description).length > 0 
             ? tier.description 
-            : string(abi.encodePacked("Botanix Ambassador NFT for ", data.levelName, " tier"));
+            : string(abi.encodePacked(data.levelName, " - ", data.monthName, " ", data.yearValue.toString()));
 
         string memory json = Base64.encode(
             bytes(
