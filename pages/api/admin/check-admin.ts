@@ -13,9 +13,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(401).json({ error: 'Unauthorized - Admin access required' })
   }
 
+  // Don't return Discord user ID for security - just confirm admin status
   return res.json({
     success: true,
-    isAdmin: true,
-    discordUserId
+    isAdmin: true
   })
 }

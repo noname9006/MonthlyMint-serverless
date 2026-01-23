@@ -29,7 +29,6 @@ export default function AdminDashboard() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
-  const [discordUserId, setDiscordUserId] = useState<string | null>(null)
   
   // Current month/year settings
   const [currentMonth, setCurrentMonth] = useState('January')
@@ -64,7 +63,6 @@ export default function AdminDashboard() {
         
         if (data.success && data.isAdmin) {
           setIsAdmin(true)
-          setDiscordUserId(data.discordUserId)
           // Load current settings
           await loadCurrentSettings()
         } else {

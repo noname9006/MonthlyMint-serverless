@@ -25,9 +25,11 @@ export function generateSessionToken(): string {
 export function setSessionCookie(res: NextApiResponse, sessionToken: string): void {
   const maxAge = SESSION_DURATION_HOURS * 60 * 60 // Convert to seconds
   
+  // Always use Secure flag - in development, this requires HTTPS or the cookie won't be sent
+  // For local development without HTTPS, you may need to temporarily set Secure=false
   res.setHeader(
     'Set-Cookie',
-    `${SESSION_COOKIE_NAME}=${sessionToken}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maxAge}; Secure=${process.env.NODE_ENV === 'production'}`
+    `${SESSION_COOKIE_NAME}=${sessionToken}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maxAge}; Secure`
   )
 }
 
@@ -109,24 +111,35 @@ export async function validateAdminSession(req: NextApiRequest): Promise<string 
     return null
   }
   
-  // Get session from database
-  const session = await getAdminSession(sessionToken)
-  
-  if (!session) {
+  try {
+    // Get session from database
+    const session = await getAdminSession(sessionToken)
+    
+    if (!session) {
+      return null
+    }
+    
+    // Verify user is still an admin
+    const isStillAdmin = checkAdminAuth(session.discord_id)
+    
+    if (!isStillAdmin) {
+      // User is no longer an admin, delete the session
+      try {
+        await deleteAdminSession(sessionToken)
+      } catch (deleteError) {
+        console.error('Failed to delete invalid admin session:', deleteError)
+      }
+      return null
+    }
+    
+    // Update last accessed timestamp
+    await touchAdminSession(sessionToken)
+    
+    return session.discord_id
+  } catch (error) {
+    console.error('Error validating admin session:', error)
     return null
   }
-  
-  // Verify user is still an admin
-  if (!checkAdminAuth(session.discord_id)) {
-    // User is no longer an admin, delete the session
-    await deleteAdminSession(sessionToken)
-    return null
-  }
-  
-  // Update last accessed timestamp
-  await touchAdminSession(sessionToken)
-  
-  return session.discord_id
 }
 
 /**
