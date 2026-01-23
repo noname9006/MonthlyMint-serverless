@@ -343,7 +343,7 @@ export default function Home() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2 mb-3">
                   <h3 className="text-base sm:text-lg font-bold font-proxima text-text-primary uppercase">Discord check</h3>
-                  <span className={`badge-cyber text-xs ${isDiscordVerified ? 'text-accent' : 'text-text-secondary'}`}>
+                  <span className={`badge-cyber ${isDiscordVerified ? 'text-accent' : 'text-text-secondary'}`}>
                     {isDiscordVerified ? 'Ready' : 'Required'}
                   </span>
                 </div>
@@ -411,7 +411,7 @@ export default function Home() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2 mb-3">
                   <h3 className="text-base sm:text-lg font-bold font-proxima text-text-primary uppercase">Connect wallet</h3>
-                  <span className={`badge-cyber text-xs ${isDiscordVerified ? 'text-accent' : 'text-text-secondary'}`}>
+                  <span className={`badge-cyber ${isDiscordVerified ? 'text-accent' : 'text-text-secondary'}`}>
                     {isDiscordVerified ? 'Available' : 'Locked'}
                   </span>
                 </div>
@@ -436,7 +436,7 @@ export default function Home() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2 mb-3">
                       <h3 className="text-base sm:text-lg font-bold font-proxima text-text-primary uppercase">Ready to mint</h3>
-                      <span className={`badge-cyber text-xs ${canProceedToMint ? 'text-accent' : 'text-text-secondary'}`}>
+                      <span className={`badge-cyber ${canProceedToMint ? 'text-accent' : 'text-text-secondary'}`}>
                         {canProceedToMint ? 'Ready' : 'Checking...'}
                       </span>
                     </div>
