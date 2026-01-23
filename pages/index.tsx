@@ -348,7 +348,6 @@ export default function Home() {
                   </span>
                 </div>
 
-
                 <div className="flex gap-3">
                   {!isDiscordVerified && (
                     <button 
@@ -418,7 +417,6 @@ export default function Home() {
                 <div className={isDiscordVerified ? '' : 'opacity-40 pointer-events-none'}>
                   <ConnectButton label="Connect wallet" showBalance={false} chainStatus="name" />
                 </div>
-
               </div>
             </div>
           </div>

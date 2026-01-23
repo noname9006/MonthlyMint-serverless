@@ -43,7 +43,7 @@ export function MintModal({ isOpen, onClose, children }: MintModalProps) {
   if (!isOpen) return null
 
   return (
-    <div ref={backdropRef} className="fixed inset-0 top-0 left-0 right-0 bottom-0 z-50 flex items-center justify-center bg-black bg-opacity-75 backdrop-blur-sm">
+    <div ref={backdropRef} className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 backdrop-blur-sm">
       {/* Modal content */}
       <div 
         ref={modalRef}
