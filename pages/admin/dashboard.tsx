@@ -29,7 +29,6 @@ export default function AdminDashboard() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
-  const [discordUserId, setDiscordUserId] = useState<string | null>(null)
   
   // Current month/year settings
   const [currentMonth, setCurrentMonth] = useState('January')
@@ -50,24 +49,14 @@ export default function AdminDashboard() {
   // Check if user is admin on mount
   useEffect(() => {
     const checkAdmin = async () => {
-      // Get Discord user ID from session storage (set during Discord auth)
-      const storedDiscordUserId = sessionStorage.getItem('discord_user_id')
-      
-      if (!storedDiscordUserId) {
-        setError('Please log in with Discord first')
-        setLoading(false)
-        return
-      }
-      
-      setDiscordUserId(storedDiscordUserId)
-      
       try {
+        // Check admin status using session cookie (server-side validation)
         const response = await fetch('/api/admin/check-admin', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'x-discord-user-id': storedDiscordUserId
-          }
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include' // Important: include cookies
         })
         
         const data = await response.json()
@@ -112,16 +101,16 @@ export default function AdminDashboard() {
 
   // Load media storage when month/year changes
   useEffect(() => {
-    if (!isAdmin || !discordUserId) return
+    if (!isAdmin) return
     
     const loadMediaStorage = async () => {
       try {
         const response = await fetch('/api/admin/get-media-storage', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'x-discord-user-id': discordUserId
+            'Content-Type': 'application/json'
           },
+          credentials: 'include', // Important: include cookies
           body: JSON.stringify({ year: mediaYear, monthName: mediaMonth })
         })
         
@@ -149,11 +138,9 @@ export default function AdminDashboard() {
     }
     
     loadMediaStorage()
-  }, [mediaMonth, mediaYear, isAdmin, discordUserId])
+  }, [mediaMonth, mediaYear, isAdmin])
 
   const handleSave = async () => {
-    if (!discordUserId) return
-    
     setSaving(true)
     setError(null)
     setSuccess(null)
@@ -163,9 +150,9 @@ export default function AdminDashboard() {
       const monthResponse = await fetch('/api/admin/set-current-month', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'x-discord-user-id': discordUserId
+          'Content-Type': 'application/json'
         },
+        credentials: 'include', // Important: include cookies
         body: JSON.stringify({ monthName: currentMonth, year: currentYear })
       })
       
@@ -187,9 +174,9 @@ export default function AdminDashboard() {
         const mediaResponse = await fetch('/api/admin/update-media-storage', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'x-discord-user-id': discordUserId
+            'Content-Type': 'application/json'
           },
+          credentials: 'include', // Important: include cookies
           body: JSON.stringify({ mediaUpdates })
         })
         

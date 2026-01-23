@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getCurrentMonthSetting, setCurrentMonthSetting } from '@/lib/db'
-import { checkAdminAuth } from '@/lib/admin'
+import { validateAdminSession } from '@/lib/session'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
@@ -33,10 +33,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === 'POST') {
-    // Admin-only endpoint - requires Discord user ID authentication
-    const discordUserId = req.headers['x-discord-user-id'] as string
+    // Admin-only endpoint - validate session
+    const discordUserId = await validateAdminSession(req)
     
-    if (!checkAdminAuth(discordUserId)) {
+    if (!discordUserId) {
       return res.status(401).json({ error: 'Unauthorized - Admin access required' })
     }
 

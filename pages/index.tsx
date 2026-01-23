@@ -104,16 +104,13 @@ export default function Home() {
   // Check admin status when Discord user changes
   useEffect(() => {
     if (discordUser) {
-      // Store Discord user ID in session storage for admin dashboard
-      sessionStorage.setItem('discord_user_id', discordUser.id)
-      
-      // Check if user is admin
+      // Check if user is admin using session-based auth
       fetch('/api/admin/check-admin', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'x-discord-user-id': discordUser.id
-        }
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include' // Include session cookies
       })
         .then(res => res.json())
         .then(data => {
@@ -128,7 +125,6 @@ export default function Home() {
           setIsAdmin(false)
         })
     } else {
-      sessionStorage.removeItem('discord_user_id')
       setIsAdmin(false)
     }
   }, [discordUser])
@@ -313,9 +309,8 @@ export default function Home() {
     setDiscordLoading(false)
     setIsAdmin(false)
     
-    // Clear session storage
+    // Clear Discord auth from session storage
     sessionStorage.removeItem('discord_auth')
-    sessionStorage.removeItem('discord_user_id')
     
     // Reset mint status
     setAlreadyMinted(false)

@@ -131,6 +131,25 @@ export async function initDatabase(): Promise<void> {
     await sql`CREATE INDEX IF NOT EXISTS idx_nft_mint_events_contract ON nft_mint_events(contract_address)`
     await sql`CREATE INDEX IF NOT EXISTS idx_media_storage_lookup ON media_storage(level_name, year, month_name)`
 
+    // Create table for secure admin sessions
+    await sql`
+      CREATE TABLE IF NOT EXISTS admin_sessions (
+        id SERIAL PRIMARY KEY,
+        session_token TEXT UNIQUE NOT NULL,
+        discord_id TEXT NOT NULL,
+        user_id INTEGER NOT NULL REFERENCES users(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        expires_at TIMESTAMP NOT NULL,
+        last_accessed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        ip_address TEXT,
+        user_agent TEXT
+      )
+    `
+    
+    await sql`CREATE INDEX IF NOT EXISTS idx_admin_sessions_token ON admin_sessions(session_token)`
+    await sql`CREATE INDEX IF NOT EXISTS idx_admin_sessions_discord_id ON admin_sessions(discord_id)`
+    await sql`CREATE INDEX IF NOT EXISTS idx_admin_sessions_expires ON admin_sessions(expires_at)`
+
     if (process.env.NODE_ENV !== 'production') {
       console.log('Database schema initialized successfully')
     }
@@ -666,4 +685,101 @@ export async function deleteMediaStorage(levelName: string, year: number, monthN
       AND year = ${year} 
       AND month_name = ${monthName}
   `
+}
+
+// Admin Session Management Functions
+
+export interface AdminSession {
+  id: number
+  session_token: string
+  discord_id: string
+  user_id: number
+  created_at: string
+  expires_at: string
+  last_accessed_at: string
+  ip_address: string | null
+  user_agent: string | null
+}
+
+/**
+ * Create a new admin session
+ * Returns the session token
+ */
+export async function createAdminSession(
+  sessionToken: string,
+  discordId: string,
+  userId: number,
+  expiresAt: Date,
+  ipAddress?: string,
+  userAgent?: string
+): Promise<AdminSession> {
+  await ensureSchema()
+  const result = await sql`
+    INSERT INTO admin_sessions (session_token, discord_id, user_id, expires_at, ip_address, user_agent)
+    VALUES (${sessionToken}, ${discordId}, ${userId}, ${expiresAt.toISOString()}, ${ipAddress || null}, ${userAgent || null})
+    RETURNING *
+  `
+  return result[0] as AdminSession
+}
+
+/**
+ * Get session by token
+ * Returns null if session doesn't exist or is expired
+ */
+export async function getAdminSession(sessionToken: string): Promise<AdminSession | null> {
+  await ensureSchema()
+  const result = await sql`
+    SELECT * FROM admin_sessions 
+    WHERE session_token = ${sessionToken}
+      AND expires_at > NOW()
+  `
+  return result.length > 0 ? (result[0] as AdminSession) : null
+}
+
+/**
+ * Update session's last accessed timestamp
+ */
+export async function touchAdminSession(sessionToken: string): Promise<void> {
+  await ensureSchema()
+  await sql`
+    UPDATE admin_sessions
+    SET last_accessed_at = CURRENT_TIMESTAMP
+    WHERE session_token = ${sessionToken}
+  `
+}
+
+/**
+ * Delete a session (logout)
+ */
+export async function deleteAdminSession(sessionToken: string): Promise<void> {
+  await ensureSchema()
+  await sql`
+    DELETE FROM admin_sessions
+    WHERE session_token = ${sessionToken}
+  `
+}
+
+/**
+ * Delete all sessions for a Discord user
+ */
+export async function deleteAllAdminSessions(discordId: string): Promise<void> {
+  await ensureSchema()
+  await sql`
+    DELETE FROM admin_sessions
+    WHERE discord_id = ${discordId}
+  `
+}
+
+/**
+ * Clean up expired sessions
+ * Should be called periodically
+ */
+export async function cleanupExpiredAdminSessions(): Promise<number> {
+  await ensureSchema()
+  const result = await sql`
+    DELETE FROM admin_sessions
+    WHERE expires_at <= NOW()
+    RETURNING id
+  `
+  return result.length
 }
