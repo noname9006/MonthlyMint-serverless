@@ -309,7 +309,7 @@ export default function Home() {
     setDiscordLoading(false)
     setIsAdmin(false)
     
-    // Clear session storage (keep only discord_auth for 5-min persistence)
+    // Clear Discord auth from session storage
     sessionStorage.removeItem('discord_auth')
     
     // Reset mint status
