@@ -20,6 +20,9 @@ interface SBTMinterProps {
 // Fallback image for when IPFS media fails to load
 const FALLBACK_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect width="200" height="200" fill="%23334155"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%2394a3b8" font-size="14"%3EImage not available%3C/text%3E%3C/svg%3E'
 
+// Event signature for SBTMinted event
+const SBT_MINTED_EVENT_SIGNATURE = 'SBTMinted(address,uint256,string,string,string,string,uint256)'
+
 interface UnmintedLowerTier {
   id: string
   name: string
@@ -83,6 +86,13 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
     fetchCurrentMonth()
   }, [])
 
+  // Refresh mint status when component mounts (e.g., when modal opens)
+  useEffect(() => {
+    if (discordId && roleName) {
+      checkMintStatus()
+    }
+  }, [discordId, roleName])
+
   const fetchCurrentMonth = async () => {
     try {
       setIsLoadingMonth(true)
@@ -100,6 +110,41 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
       console.error('Failed to fetch current month:', err)
     } finally {
       setIsLoadingMonth(false)
+    }
+  }
+
+  const checkMintStatus = async () => {
+    try {
+      const response = await fetch('/api/nft/check-mint-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          discordId: discordId,
+          roleName: roleName,
+        }),
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          // Update local state based on server response
+          setLocalMinted(data.alreadyMinted)
+          // If already minted, clear any pending transaction state
+          if (data.alreadyMinted) {
+            setPendingTxHash(null)
+            setLoading(false)
+            setError(null)
+          }
+          // Check if there are unminted lower tiers
+          if (data.hasLowerTierAvailable || data.alreadyMinted) {
+            fetchUnmintedLowerTiers().catch((err) => {
+              console.error('Error fetching unminted lower tiers:', err)
+            })
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Failed to check mint status:', err)
     }
   }
 
@@ -176,9 +221,39 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
 
     try {
       // Wait for the transaction to be confirmed
-      await waitForTransactionReceipt(config, {
+      const receipt = await waitForTransactionReceipt(config, {
         hash: txHash,
       })
+
+      // Extract tokenId from SBTMinted event in the receipt
+      let tokenId: string | undefined = undefined
+      const sbtMintedEvent = receipt.logs.find((log: any) => {
+        try {
+          // SBTMinted event signature: SBTMinted(address indexed to, uint256 indexed tokenId, ...)
+          const eventSignature = ethers.utils.keccak256(
+            ethers.utils.toUtf8Bytes(SBT_MINTED_EVENT_SIGNATURE)
+          )
+          return log.topics[0] === eventSignature
+        } catch {
+          return false
+        }
+      })
+
+      if (sbtMintedEvent) {
+        try {
+          // tokenId is the second indexed parameter (topics[2])
+          // topics[0] is event signature, topics[1] is 'to' address, topics[2] is tokenId
+          if (sbtMintedEvent.topics.length > 2 && sbtMintedEvent.topics[2]) {
+            const tokenIdBigInt = BigInt(sbtMintedEvent.topics[2])
+            tokenId = tokenIdBigInt.toString()
+            console.log(`✓ Extracted tokenId from SBTMinted event: ${tokenId}`)
+          }
+        } catch (err) {
+          console.error('Failed to decode SBTMinted event tokenId:', err)
+        }
+      } else {
+        console.warn('SBTMinted event not found in receipt logs')
+      }
 
       // Call the log-mint API
       const response = await fetch('/api/nft/log-mint', {
@@ -189,6 +264,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
           walletAddress: address,
           contractAddress: NFT_CONTRACT_ADDRESS,
           transactionHash: txHash,
+          tokenId: tokenId, // Include extracted tokenId
           roleName: tierName,
           mediaUri: tierMediaURI,
           levelName: tierName,
@@ -769,9 +845,9 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
               className="btn-cyber w-full"
             >
               {isLoadingMonth || isLoadingMedia ? 'Loading...' : 
+               isMinted ? 'Minted, see you next month' :
                loading ? 'Minting...' : 
                pendingTxHash ? 'Minting...' : 
-               isMinted ? 'Minted, see you next month' : 
                'Mint your NFT (Freemint)'}
             </button>
           </div>
@@ -779,7 +855,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
           {isMinted && unmintedLowerTiers.length > 0 && (
             <div className="mt-4">
               <p className="text-text-secondary text-sm text-center mb-3">
-                You have {unmintedLowerTiers.length} lower-tier NFT{unmintedLowerTiers.length > 1 ? 's' : ''} available to mint: {unmintedLowerTiers.map(t => t.name).join(', ')}
+                You can mint {unmintedLowerTiers.length} lower-tier NFT{unmintedLowerTiers.length > 1 ? 's' : ''} to complete your collection!
               </p>
               <button
                 onClick={handleBatchMintLowerTiers}
