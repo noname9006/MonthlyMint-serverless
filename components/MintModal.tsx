@@ -43,16 +43,16 @@ export function MintModal({ isOpen, onClose, children }: MintModalProps) {
   if (!isOpen) return null
 
   return (
-    <div ref={backdropRef} className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 backdrop-blur-sm">
+    <div ref={backdropRef} className="fixed inset-0 top-0 left-0 right-0 bottom-0 z-50 flex items-center justify-center bg-black bg-opacity-75 backdrop-blur-sm">
       {/* Modal content */}
       <div 
         ref={modalRef}
-        className="relative max-w-2xl w-full mx-4 max-h-[85vh] bg-background card-cyber p-8 overflow-hidden flex flex-col z-10"
+        className="relative max-w-2xl w-full mx-2 sm:mx-4 max-h-[85vh] bg-background card-cyber p-4 sm:p-8 overflow-hidden flex flex-col z-10"
       >
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-text-secondary hover:text-accent transition-colors text-2xl font-bold z-10"
+          className="absolute top-2 sm:top-4 right-2 sm:right-4 text-text-secondary hover:text-accent transition-colors text-2xl font-bold z-10"
           aria-label="Close modal"
         >
           ×

@@ -323,31 +323,31 @@ export default function Home() {
         <title>Botanix Ambassador Program</title>
         <meta name="description" content="Botanix Ambassador Program" />
       </Head>
-      <main className="min-h-screen bg-background py-12 px-4 flex justify-center">
-        <section className="w-full max-w-4xl card-cyber p-8 space-y-8">
-          <div className="flex items-start justify-between gap-4 flex-wrap pb-6">
+      <main className="min-h-screen bg-background py-6 sm:py-12 px-2 sm:px-4 flex justify-center">
+        <section className="w-full max-w-4xl card-cyber p-4 sm:p-8 space-y-6 sm:space-y-8">
+          <div className="flex items-start justify-between gap-4 flex-wrap pb-4 sm:pb-6">
             <div>
-              <p className="text-sm font-bold uppercase tracking-widest text-accent mb-2">Botanix • Ambassador Program</p>
-              <p className="text-text-secondary">Verify Discord and connect wallet to mint your NFT</p>
+              <p className="text-xs sm:text-sm font-bold uppercase tracking-widest text-accent mb-2">Botanix • Ambassador Program</p>
+              <p className="text-sm sm:text-base text-text-secondary">Immutable proof of your contributions. Mint your achievements monthly.</p>
             </div>
           </div>
           
           <div className="divider-cyber"></div>
 
-          <div className="card-cyber p-6">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold font-proxima text-text-primary uppercase">Step 1: Authorise using your Discord account</h2>
+          <div className="card-cyber p-4 sm:p-6">
+            <div className="mb-4 sm:mb-6">
+              <h2 className="text-xl sm:text-2xl font-bold font-proxima text-text-primary uppercase">Step 1: Authorise using your Discord account</h2>
             </div>
             
             <div className="flex gap-5 flex-wrap">
-              <div className="flex-1 min-w-[300px]">
+              <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2 mb-3">
-                  <h3 className="text-lg font-bold font-proxima text-text-primary uppercase">Discord check</h3>
-                  <span className={`badge-cyber ${isDiscordVerified ? 'text-accent' : 'text-text-secondary'}`}>
+                  <h3 className="text-base sm:text-lg font-bold font-proxima text-text-primary uppercase">Discord check</h3>
+                  <span className={`badge-cyber text-xs ${isDiscordVerified ? 'text-accent' : 'text-text-secondary'}`}>
                     {isDiscordVerified ? 'Ready' : 'Required'}
                   </span>
                 </div>
-                <p className="text-text-secondary mb-4">Sign in with Discord to confirm Botanix server membership.</p>
+
 
                 <div className="flex gap-3">
                   {!isDiscordVerified && (
@@ -402,48 +402,48 @@ export default function Home() {
 
           <div className="divider-cyber"></div>
 
-          <div className="card-cyber p-6">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold font-proxima text-text-primary uppercase">Step 2: Connect your wallet</h2>
+          <div className="card-cyber p-4 sm:p-6">
+            <div className="mb-4 sm:mb-6">
+              <h2 className="text-xl sm:text-2xl font-bold font-proxima text-text-primary uppercase">Step 2: Connect your wallet</h2>
             </div>
             
             <div className="flex gap-5 flex-wrap">
-              <div className="flex-1 min-w-[300px]">
+              <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2 mb-3">
-                  <h3 className="text-lg font-bold font-proxima text-text-primary uppercase">Connect wallet</h3>
-                  <span className={`badge-cyber ${isDiscordVerified ? 'text-accent' : 'text-text-secondary'}`}>
+                  <h3 className="text-base sm:text-lg font-bold font-proxima text-text-primary uppercase">Connect wallet</h3>
+                  <span className={`badge-cyber text-xs ${isDiscordVerified ? 'text-accent' : 'text-text-secondary'}`}>
                     {isDiscordVerified ? 'Available' : 'Locked'}
                   </span>
                 </div>
                 <div className={isDiscordVerified ? '' : 'opacity-40 pointer-events-none'}>
                   <ConnectButton label="Connect wallet" showBalance={false} chainStatus="name" />
                 </div>
-                {!isDiscordVerified && <p className="mt-2 text-text-secondary text-sm">Finish Discord login first.</p>}
+
               </div>
             </div>
           </div>
 
           {/* Mint Section - shown when wallet and discord are connected */}
           {isDiscordVerified && isConnected && (
-            <div className="mt-8">
-              <div className="divider-cyber mb-8"></div>
-              <div className="card-cyber p-6">
-                <div className="mb-6">
-                  <h2 className="text-2xl font-bold font-proxima text-text-primary uppercase">Step 3: Mint your NFT</h2>
+            <div className="mt-6 sm:mt-8">
+              <div className="divider-cyber mb-6 sm:mb-8"></div>
+              <div className="card-cyber p-4 sm:p-6">
+                <div className="mb-4 sm:mb-6">
+                  <h2 className="text-xl sm:text-2xl font-bold font-proxima text-text-primary uppercase">Step 3: Mint your NFT</h2>
                 </div>
                 
                 <div className="flex gap-5 flex-wrap">
-                  <div className="flex-1 min-w-[300px]">
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2 mb-3">
-                      <h3 className="text-lg font-bold font-proxima text-text-primary uppercase">Ready to mint</h3>
-                      <span className={`badge-cyber ${canProceedToMint ? 'text-accent' : 'text-text-secondary'}`}>
+                      <h3 className="text-base sm:text-lg font-bold font-proxima text-text-primary uppercase">Ready to mint</h3>
+                      <span className={`badge-cyber text-xs ${canProceedToMint ? 'text-accent' : 'text-text-secondary'}`}>
                         {canProceedToMint ? 'Ready' : 'Checking...'}
                       </span>
                     </div>
                     
                     {highestRole ? (
                       <>
-                        <p className="text-text-secondary mb-4">
+                        <p className="text-sm sm:text-base text-text-secondary mb-4">
                           Your level: <span className="text-accent font-bold">{highestRole.name}</span>
                         </p>
                         <button
@@ -455,8 +455,10 @@ export default function Home() {
                         </button>
                       </>
                     ) : (
-                      <p className="text-text-secondary mb-4">
-                        No eligible role detected. Please ensure you have one of the ambassador roles in the Botanix Discord server.
+                      <p className="text-sm sm:text-base text-text-secondary mb-4">
+                        <a href="https://discord.gg/2D95PBCM2g" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
+                          Join Botanix Discord
+                        </a> today to be eligible.
                       </p>
                     )}
                   </div>
@@ -468,9 +470,9 @@ export default function Home() {
           {/* Mint Modal */}
           {highestRole && discordUser && (
             <MintModal isOpen={showMintModal} onClose={() => setShowMintModal(false)}>
-              <div className="mb-6">
-                <h2 className="text-3xl font-bold font-proxima text-text-primary uppercase text-center">Mint Your NFT</h2>
-                <p className="text-center text-text-secondary mt-2">Level: <span className="text-accent font-bold">{highestRole.name}</span></p>
+              <div className="mb-4 sm:mb-6">
+                <h2 className="text-2xl sm:text-3xl font-bold font-proxima text-text-primary uppercase text-center">Mint Your NFT</h2>
+                <p className="text-center text-sm sm:text-base text-text-secondary mt-2">Level: <span className="text-accent font-bold">{highestRole.name}</span></p>
               </div>
               <SBTMinter 
                 discordId={discordUser.id} 

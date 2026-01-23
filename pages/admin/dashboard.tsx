@@ -221,7 +221,7 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-background py-12 px-4 flex justify-center items-center">
+      <main className="min-h-screen bg-background py-6 sm:py-12 px-2 sm:px-4 flex justify-center items-center">
         <p className="text-text-primary">Loading...</p>
       </main>
     )
@@ -229,10 +229,10 @@ export default function AdminDashboard() {
 
   if (!isAdmin) {
     return (
-      <main className="min-h-screen bg-background py-12 px-4 flex justify-center items-center">
-        <div className="card-cyber p-8 max-w-md">
-          <h1 className="text-2xl font-bold text-error mb-4">Access Denied</h1>
-          <p className="text-text-secondary mb-4">{error || 'Admin privileges required'}</p>
+      <main className="min-h-screen bg-background py-6 sm:py-12 px-2 sm:px-4 flex justify-center items-center">
+        <div className="card-cyber p-4 sm:p-8 max-w-md w-full">
+          <h1 className="text-xl sm:text-2xl font-bold text-error mb-3 sm:mb-4">Access Denied</h1>
+          <p className="text-text-secondary mb-3 sm:mb-4 text-sm sm:text-base">{error || 'Admin privileges required'}</p>
           <button onClick={() => router.push('/')} className="btn-cyber w-full">
             Return to Home
           </button>
@@ -246,28 +246,28 @@ export default function AdminDashboard() {
       <Head>
         <title>Admin Dashboard - Botanix Ambassador Program</title>
       </Head>
-      <main className="min-h-screen bg-background py-12 px-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="card-cyber p-8 mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <h1 className="text-3xl font-bold font-proxima text-text-primary uppercase">Admin Dashboard</h1>
-              <button onClick={() => router.push('/')} className="btn-cyber-secondary">
+      <main className="min-h-screen bg-background py-6 sm:py-8 px-2 sm:px-4">
+        <div className="max-w-5xl mx-auto">
+          <div className="card-cyber p-4 sm:p-6 mb-4 sm:mb-6">
+            <div className="flex items-center justify-between mb-4 sm:mb-6 flex-wrap gap-3">
+              <h1 className="text-2xl sm:text-3xl font-bold font-proxima text-text-primary uppercase">Admin Dashboard</h1>
+              <button onClick={() => router.push('/')} className="btn-cyber-secondary text-sm sm:text-base px-4 py-2">
                 Back to Home
               </button>
             </div>
             
-            <div className="divider-cyber mb-8"></div>
+            <div className="divider-cyber mb-4 sm:mb-6"></div>
 
             {/* Current Month/Year Section */}
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold font-proxima text-text-primary uppercase mb-4">Current Month and Year</h2>
-              <div className="flex gap-4 flex-wrap">
-                <div className="flex-1 min-w-[200px]">
-                  <label className="block text-text-secondary mb-2">Month</label>
+            <div className="mb-4 sm:mb-6">
+              <h2 className="text-lg sm:text-xl font-bold font-proxima text-text-primary uppercase mb-3">Current Month and Year</h2>
+              <div className="flex gap-3 flex-wrap">
+                <div className="flex-1 min-w-[150px]">
+                  <label className="block text-text-secondary mb-1 text-sm">Month</label>
                   <select 
                     value={currentMonth} 
                     onChange={(e) => setCurrentMonth(e.target.value)}
-                    className="w-full bg-surface border-2 border-accent text-text-primary p-3 font-proxima uppercase"
+                    className="w-full bg-surface border-2 border-accent text-text-primary p-2 font-proxima uppercase text-sm"
                     style={{ clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))' }}
                   >
                     {MONTHS.map(month => (
@@ -275,12 +275,12 @@ export default function AdminDashboard() {
                     ))}
                   </select>
                 </div>
-                <div className="flex-1 min-w-[200px]">
-                  <label className="block text-text-secondary mb-2">Year</label>
+                <div className="flex-1 min-w-[150px]">
+                  <label className="block text-text-secondary mb-1 text-sm">Year</label>
                   <select 
                     value={currentYear} 
                     onChange={(e) => setCurrentYear(Number(e.target.value))}
-                    className="w-full bg-surface border-2 border-accent text-text-primary p-3 font-proxima uppercase"
+                    className="w-full bg-surface border-2 border-accent text-text-primary p-2 font-proxima uppercase text-sm"
                     style={{ clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))' }}
                   >
                     {YEARS.map(year => (
@@ -291,18 +291,18 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            <div className="divider-cyber mb-8"></div>
+            <div className="divider-cyber mb-4 sm:mb-6"></div>
 
             {/* Media Storage Section */}
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold font-proxima text-text-primary uppercase mb-4">Media Storage</h2>
-              <div className="flex gap-4 flex-wrap mb-6">
-                <div className="flex-1 min-w-[200px]">
-                  <label className="block text-text-secondary mb-2">Month</label>
+            <div className="mb-4 sm:mb-6">
+              <h2 className="text-lg sm:text-xl font-bold font-proxima text-text-primary uppercase mb-3">Media Storage</h2>
+              <div className="flex gap-3 flex-wrap mb-4">
+                <div className="flex-1 min-w-[150px]">
+                  <label className="block text-text-secondary mb-1 text-sm">Month</label>
                   <select 
                     value={mediaMonth} 
                     onChange={(e) => setMediaMonth(e.target.value)}
-                    className="w-full bg-surface border-2 border-accent text-text-primary p-3 font-proxima uppercase"
+                    className="w-full bg-surface border-2 border-accent text-text-primary p-2 font-proxima uppercase text-sm"
                     style={{ clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))' }}
                   >
                     {MONTHS.map(month => (
@@ -310,12 +310,12 @@ export default function AdminDashboard() {
                     ))}
                   </select>
                 </div>
-                <div className="flex-1 min-w-[200px]">
-                  <label className="block text-text-secondary mb-2">Year</label>
+                <div className="flex-1 min-w-[150px]">
+                  <label className="block text-text-secondary mb-1 text-sm">Year</label>
                   <select 
                     value={mediaYear} 
                     onChange={(e) => setMediaYear(Number(e.target.value))}
-                    className="w-full bg-surface border-2 border-accent text-text-primary p-3 font-proxima uppercase"
+                    className="w-full bg-surface border-2 border-accent text-text-primary p-2 font-proxima uppercase text-sm"
                     style={{ clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))' }}
                   >
                     {YEARS.map(year => (
@@ -326,22 +326,22 @@ export default function AdminDashboard() {
               </div>
 
               {/* Media Entries */}
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {mediaEntries.map(entry => (
-                  <div key={entry.levelName} className="pb-4 border-b border-accent border-opacity-30 last:border-0">
-                    <div className="flex gap-4 flex-wrap items-start">
-                      <div className="flex-1 min-w-[300px]">
-                        <label className="block text-text-primary font-bold mb-2">{entry.levelName}</label>
+                  <div key={entry.levelName} className="pb-3 border-b border-accent border-opacity-20 last:border-0">
+                    <div className="flex gap-3 flex-wrap items-start">
+                      <div className="flex-1 min-w-[200px]">
+                        <label className="block text-text-primary font-bold mb-1 text-sm">{entry.levelName}</label>
                         <input
                           type="text"
                           value={entry.ipfsCid}
                           onChange={(e) => updateMediaEntry(entry.levelName, e.target.value)}
                           placeholder="Enter IPFS CID (e.g., QmXxx...)"
-                          className="w-full bg-surface border-2 border-accent text-text-primary p-3 font-mono"
+                          className="w-full bg-surface border-2 border-accent text-text-primary p-2 font-mono text-xs"
                           style={{ clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))' }}
                         />
                       </div>
-                      <div className="w-32 h-32">
+                      <div className="w-20 h-20 sm:w-24 sm:h-24">
                         {entry.previewUrl ? (
                           <img 
                             src={entry.previewUrl} 
@@ -368,33 +368,33 @@ export default function AdminDashboard() {
             </div>
 
             {/* Action Buttons */}
-            <div className="divider-cyber mb-6"></div>
-            <div className="flex gap-4 flex-wrap">
+            <div className="divider-cyber mb-4"></div>
+            <div className="flex gap-3 flex-wrap">
               <button 
                 onClick={handleSave} 
                 disabled={saving}
-                className="btn-cyber flex-1 min-w-[200px]"
+                className="btn-cyber flex-1 min-w-[150px] text-sm sm:text-base"
               >
                 {saving ? 'Saving...' : 'Save Changes'}
               </button>
               <button 
                 onClick={handleDiscard} 
                 disabled={saving}
-                className="btn-cyber-secondary flex-1 min-w-[200px]"
+                className="btn-cyber-secondary flex-1 min-w-[150px] text-sm sm:text-base"
               >
                 Discard Changes
               </button>
             </div>
 
             {error && (
-              <div className="mt-4 p-4 bg-error bg-opacity-10 border-2 border-error">
-                <p className="text-error">{error}</p>
+              <div className="mt-3 p-3 bg-error bg-opacity-10 border-2 border-error">
+                <p className="text-error text-sm">{error}</p>
               </div>
             )}
 
             {success && (
-              <div className="mt-4 p-4 bg-accent bg-opacity-10 border-2 border-accent">
-                <p className="text-accent">{success}</p>
+              <div className="mt-3 p-3 bg-accent bg-opacity-10 border-2 border-accent">
+                <p className="text-accent text-sm">{success}</p>
               </div>
             )}
           </div>
