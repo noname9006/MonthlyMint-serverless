@@ -35,6 +35,11 @@ function getCooldownKey(discordId: string, roleName: string, year: number, month
   return `mint_cooldown_${discordId}_${roleName}_${year}_${monthName}`
 }
 
+// Helper function to generate minting-in-progress storage key
+function getMintingInProgressKey(discordId: string, roleName: string, year: number, monthName: string): string {
+  return `minting_in_progress_${discordId}_${roleName}_${year}_${monthName}`
+}
+
 export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinted = false, hasLowerTierAvailable = false }: SBTMinterProps) {
   const { address } = useAccount()
   const config = useConfig()
@@ -62,6 +67,9 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
   // Cooldown state - 30 second cooldown after mint initiation
   const [cooldownEnd, setCooldownEnd] = useState<number | null>(null)
   const [cooldownRemaining, setCooldownRemaining] = useState(0)
+  
+  // Track if minting is in progress (persisted in localStorage to survive popup close/reopen)
+  const [isMintingInProgress, setIsMintingInProgress] = useState(false)
   
   // Combine prop and local state to determine if minted
   const isMinted = alreadyMinted || localMinted
@@ -110,6 +118,26 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
       } else {
         // Cooldown expired, remove it
         localStorage.removeItem(cooldownKey)
+      }
+    }
+    
+    // Check for existing minting-in-progress state
+    const mintingKey = getMintingInProgressKey(discordId, roleName, currentMonth.year, currentMonth.monthName)
+    const storedMinting = localStorage.getItem(mintingKey)
+    if (storedMinting) {
+      const mintingData = JSON.parse(storedMinting)
+      const now = Date.now()
+      const MINTING_STATE_EXPIRATION = 10 * 60 * 1000 // 10 minutes - longer than typical transaction confirmation
+      
+      if (now - mintingData.timestamp < MINTING_STATE_EXPIRATION) {
+        // Minting is still in progress
+        setIsMintingInProgress(true)
+        if (mintingData.txHash) {
+          setPendingTxHash(mintingData.txHash)
+        }
+      } else {
+        // Minting state expired, remove it
+        localStorage.removeItem(mintingKey)
       }
     }
   }, [discordId, roleName, currentMonth])
@@ -217,6 +245,15 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
     return `ipfs://${cid}`
   }
 
+  // Helper function to clear minting-in-progress state
+  const clearMintingInProgress = () => {
+    setIsMintingInProgress(false)
+    if (typeof window !== 'undefined' && currentMonth) {
+      const mintingKey = getMintingInProgressKey(discordId, roleName, currentMonth.year, currentMonth.monthName)
+      localStorage.removeItem(mintingKey)
+    }
+  }
+
   // Helper function to wait for transaction and log the mint
   const waitForTransactionAndLog = async (txHash: `0x${string}`, tierName: string, tierMediaURI: string, tierMonthName: string, tierYear: number, requestId?: string) => {
     // Check if this transaction is already being logged (deduplication)
@@ -263,6 +300,8 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
         // This was the main role mint - update local state
         setLocalMinted(true)
         setPendingTxHash(null)
+        // Clear minting-in-progress state
+        clearMintingInProgress()
         // Fetch unminted lower tiers to check if they exist
         fetchUnmintedLowerTiers().catch((err) => {
           console.error('Error fetching unminted lower tiers after mint:', err)
@@ -273,6 +312,8 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
         // Even if logging fails, the mint succeeded on-chain
         setLocalMinted(true)
         setPendingTxHash(null)
+        // Clear minting-in-progress state
+        clearMintingInProgress()
         // Remove from loggingInProgress on API failure to allow retry
         setLoggingInProgress(prev => {
           const newSet = new Set(prev)
@@ -284,6 +325,8 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
       console.error('Error waiting for transaction or logging mint event:', err)
       // Clear pending transaction hash for main role to allow retry
       setPendingTxHash(null)
+      // Clear minting-in-progress state on error
+      clearMintingInProgress()
       // Remove from loggingInProgress on error to allow retry
       setLoggingInProgress(prev => {
         const newSet = new Set(prev)
@@ -372,6 +415,14 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
         setCooldownEnd(cooldownTimestamp)
         const cooldownKey = getCooldownKey(discordId, roleName, currentMonth.year, currentMonth.monthName)
         localStorage.setItem(cooldownKey, cooldownTimestamp.toString())
+        
+        // Mark minting as in progress in localStorage
+        setIsMintingInProgress(true)
+        const mintingKey = getMintingInProgressKey(discordId, roleName, currentMonth.year, currentMonth.monthName)
+        localStorage.setItem(mintingKey, JSON.stringify({
+          timestamp: Date.now(),
+          txHash: null, // Will be updated after transaction is submitted
+        }))
       }
 
       // Then, mint with the signature and capture the transaction hash
@@ -397,6 +448,15 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
       // Store the pending transaction hash
       setPendingTxHash(txHash)
       
+      // Update minting-in-progress state with transaction hash
+      if (typeof window !== 'undefined') {
+        const mintingKey = getMintingInProgressKey(discordId, roleName, currentMonth.year, currentMonth.monthName)
+        localStorage.setItem(mintingKey, JSON.stringify({
+          timestamp: Date.now(),
+          txHash: txHash,
+        }))
+      }
+      
       // Wait for transaction and log it (don't await - let it run in background)
       waitForTransactionAndLog(txHash, roleName, mediaURI, currentMonth.monthName, currentMonth.year, requestId).catch((err) => {
         console.error('Unhandled error in waitForTransactionAndLog:', err)
@@ -405,6 +465,13 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
       setError('Failed to mint NFT')
       console.error(err)
       setPendingTxHash(null)
+      setIsMintingInProgress(false)
+      
+      // Clear minting-in-progress state from localStorage
+      if (typeof window !== 'undefined' && currentMonth) {
+        const mintingKey = getMintingInProgressKey(discordId, roleName, currentMonth.year, currentMonth.monthName)
+        localStorage.removeItem(mintingKey)
+      }
     } finally {
       setLoading(false)
     }
@@ -799,7 +866,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
   }
 
   // Computed variables for better readability
-  const isMintButtonDisabled = isMinted || loading || !address || !!pendingTxHash || isLoadingMonth || isLoadingMedia || !mediaURI || cooldownRemaining > 0
+  const isMintButtonDisabled = isMinted || loading || !address || !!pendingTxHash || isLoadingMonth || isLoadingMedia || !mediaURI || cooldownRemaining > 0 || isMintingInProgress
 
   return(
     <div className={isMainPage ? 'card-cyber p-6 mt-8' : ''}>
@@ -838,7 +905,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
             >
               {isLoadingMonth || isLoadingMedia ? 'Loading...' : 
                loading ? 'Minting...' : 
-               pendingTxHash ? 'Minting...' : 
+               pendingTxHash || isMintingInProgress ? 'Minting...' : 
                cooldownRemaining > 0 ? `Wait ${cooldownRemaining}s...` :
                isMinted ? 'Minted, see you next month' : 
                'Mint your NFT (Freemint)'}

@@ -85,10 +85,7 @@ export async function initDatabase(): Promise<void> {
         token_id TEXT,
         transaction_hash TEXT NOT NULL,
         role_name TEXT,
-        credential_type TEXT,  -- Deprecated field, kept for backward compatibility
-        metadata TEXT,  -- Deprecated field, kept for backward compatibility
         media_uri TEXT,
-        level INTEGER,
         level_name TEXT,
         month_name TEXT,
         year INTEGER,
@@ -356,10 +353,7 @@ export interface NftMintEvent {
   token_id?: string
   transaction_hash: string
   role_name?: string
-  credential_type?: string
-  metadata?: string
   media_uri?: string
-  level?: number
   level_name?: string
   month_name?: string
   year?: number
@@ -404,7 +398,7 @@ export async function logNftMint(event: NftMintEvent): Promise<LogNftMintResult>
     await sql`
       INSERT INTO nft_mint_events 
       (discord_id, user_id, wallet_address, contract_address, token_id, 
-       transaction_hash, role_name, credential_type, metadata, media_uri, level,
+       transaction_hash, role_name, media_uri,
        level_name, month_name, year, request_id)
       VALUES (
         ${event.discord_id},
@@ -414,10 +408,7 @@ export async function logNftMint(event: NftMintEvent): Promise<LogNftMintResult>
         ${event.token_id || null},
         ${event.transaction_hash},
         ${event.role_name || null},
-        ${event.credential_type || null},
-        ${event.metadata || null},
         ${event.media_uri || null},
-        ${event.level || null},
         ${event.level_name || null},
         ${event.month_name || null},
         ${event.year || null},
