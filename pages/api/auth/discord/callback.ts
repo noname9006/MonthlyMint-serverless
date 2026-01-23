@@ -2,6 +2,8 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 
 import { exchangeCodeForToken, getDiscordUser, getGuildMember, getHighestRole } from '@/lib/discord'
 import { getOrCreateUser, logDiscordAuth } from '@/lib/db'
+import { checkAdminAuth } from '@/lib/admin'
+import { createSession } from '@/lib/session'
 
 const STATE_COOKIE = 'discord_oauth_state'
 
@@ -71,11 +73,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       user_agent: userAgent,
     })
 
+    // Create admin session if user is an admin
+    let isAdmin = false
+    if (checkAdminAuth(user.id)) {
+      await createSession(res, user.id, dbUser.id, req)
+      isAdmin = true
+    }
+
     return renderClosePage(res, {
       status: 'success',
       user,
       member,
       highestRole,
+      isAdmin,
     })
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Could not authenticate'
@@ -100,7 +110,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 }
 
 type ClosePayload =
-  | { status: 'success'; user: unknown; member: unknown; highestRole: unknown }
+  | { status: 'success'; user: unknown; member: unknown; highestRole: unknown; isAdmin: boolean }
   | { status: 'error'; error: string }
 
 function renderClosePage(res: NextApiResponse, payload: ClosePayload) {
