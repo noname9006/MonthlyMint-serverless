@@ -238,7 +238,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
         try {
           // tokenId is the second indexed parameter (topics[2])
           // topics[0] is event signature, topics[1] is 'to' address, topics[2] is tokenId
-          if (sbtMintedEvent.topics.length > 2) {
+          if (sbtMintedEvent.topics.length > 2 && sbtMintedEvent.topics[2]) {
             const tokenIdBigInt = BigInt(sbtMintedEvent.topics[2])
             tokenId = tokenIdBigInt.toString()
             console.log(`✓ Extracted tokenId from SBTMinted event: ${tokenId}`)
