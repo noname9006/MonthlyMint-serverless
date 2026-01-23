@@ -110,8 +110,10 @@ export default function Home() {
       // Check if user is admin
       fetch('/api/admin/check-admin', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ discordUserId: discordUser.id }),
+        headers: {
+          'Content-Type': 'application/json',
+          'x-discord-user-id': discordUser.id
+        }
       })
         .then(res => res.json())
         .then(data => {
