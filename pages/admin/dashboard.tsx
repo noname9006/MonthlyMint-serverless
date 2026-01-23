@@ -64,8 +64,10 @@ export default function AdminDashboard() {
       try {
         const response = await fetch('/api/admin/check-admin', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ discordUserId: storedDiscordUserId })
+          headers: {
+            'Content-Type': 'application/json',
+            'x-discord-user-id': storedDiscordUserId
+          }
         })
         
         const data = await response.json()
