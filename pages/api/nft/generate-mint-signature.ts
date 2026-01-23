@@ -6,38 +6,6 @@ import { chainConfig } from '@/lib/chains'
 const BACKEND_PRIVATE_KEY = process.env.BACKEND_PRIVATE_KEY
 const NFT_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS || ''
 
-// In-memory cache to track pending mints with expiration
-// Note: In serverless environments, each instance maintains its own Map.
-// This is acceptable as the goal is to reduce duplicate requests within the same instance.
-// The database layer provides the final source of truth for completed mints.
-interface PendingMint {
-  timestamp: number
-  discordId: string  // Stored for debugging and logging purposes
-  roleName: string   // Stored for debugging and logging purposes
-}
-
-const pendingMints = new Map<string, PendingMint>()
-const PENDING_MINT_EXPIRATION_MS = 5 * 60 * 1000 // 5 minutes
-
-// Clean up pending mints older than 5 minutes
-function cleanupPendingMints() {
-  const now = Date.now()
-  const expiredKeys: string[] = []
-  
-  // Use Array.from() to convert iterator to array for safer iteration
-  Array.from(pendingMints.entries()).forEach(([key, pending]) => {
-    if (now - pending.timestamp > PENDING_MINT_EXPIRATION_MS) {
-      expiredKeys.push(key)
-    }
-  })
-  
-  expiredKeys.forEach(key => pendingMints.delete(key))
-  
-  if (expiredKeys.length > 0) {
-    console.log(`Cleaned up ${expiredKeys.length} expired pending mints`)
-  }
-}
-
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
@@ -101,21 +69,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const connection = await getActiveWalletConnectionByAddress(discordId, userWalletAddress)
     if (!connection) {
       return res.status(403).json({ error: 'Wallet not connected to Discord account' })
-    }
-
-    // Clean up expired pending mints before checking
-    cleanupPendingMints()
-
-    // Check if user has a pending mint for this role (optimistic locking)
-    const pendingMintKey = `${discordId}:${roleName}`
-    const existingPending = pendingMints.get(pendingMintKey)
-    
-    if (existingPending) {
-      console.log(`User ${discordId} has pending mint for role: ${roleName}`)
-      return res.status(403).json({
-        error: 'You already have a pending mint for this role. Please wait...',
-        code: 'PENDING_MINT'
-      })
     }
 
     // Anti-abuse checks: Check if user already minted this specific tier (levelName + year + monthName)
@@ -194,17 +147,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Sign with EIP-712
     const signature = await wallet._signTypedData(domain, types, message)
-
-    // Add to pending mints cache (optimistic locking)
-    // Note: This entry will naturally expire after 5 minutes.
-    // We don't need to manually remove it on success because once the mint is logged
-    // to the database, the hasUserMintedForRole() check (line 103) will block future
-    // signature requests before they reach this pending check.
-    pendingMints.set(pendingMintKey, {
-      timestamp: Date.now(),
-      discordId: discordId,
-      roleName: roleName
-    })
 
     // Log signature generation
     console.log(`Generated signature for user ${discordId}, role ${roleName}, wallet ${userWalletAddress}`)
