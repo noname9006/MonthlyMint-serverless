@@ -6,16 +6,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { discordUserId } = req.body
-
-  if (!discordUserId) {
-    return res.status(400).json({ error: 'discordUserId is required' })
+  // Admin-only endpoint - read Discord user ID from header
+  const discordUserId = req.headers['x-discord-user-id'] as string
+  
+  if (!checkAdminAuth(discordUserId)) {
+    return res.status(401).json({ error: 'Unauthorized - Admin access required' })
   }
-
-  const isAdmin = checkAdminAuth(discordUserId)
 
   return res.json({
     success: true,
-    isAdmin
+    isAdmin: true
   })
 }
