@@ -24,12 +24,13 @@ export function generateSessionToken(): string {
  */
 export function setSessionCookie(res: NextApiResponse, sessionToken: string): void {
   const maxAge = SESSION_DURATION_HOURS * 60 * 60 // Convert to seconds
+  const isProduction = process.env.NODE_ENV === 'production'
   
-  // Always use Secure flag - in development, this requires HTTPS or the cookie won't be sent
-  // For local development without HTTPS, you may need to temporarily set Secure=false
+  // Use Secure flag in production (requires HTTPS)
+  // In development, Secure is optional to allow local testing without HTTPS
   res.setHeader(
     'Set-Cookie',
-    `${SESSION_COOKIE_NAME}=${sessionToken}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maxAge}; Secure`
+    `${SESSION_COOKIE_NAME}=${sessionToken}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maxAge}${isProduction ? '; Secure' : ''}`
   )
 }
 
@@ -127,7 +128,8 @@ export async function validateAdminSession(req: NextApiRequest): Promise<string 
       try {
         await deleteAdminSession(sessionToken)
       } catch (deleteError) {
-        console.error('Failed to delete invalid admin session:', deleteError)
+        // Log error without sensitive details
+        console.error('Failed to delete invalid admin session')
       }
       return null
     }
@@ -137,7 +139,8 @@ export async function validateAdminSession(req: NextApiRequest): Promise<string 
     
     return session.discord_id
   } catch (error) {
-    console.error('Error validating admin session:', error)
+    // Log error type without sensitive session details
+    console.error('Error validating admin session:', error instanceof Error ? error.message : 'Unknown error')
     return null
   }
 }
