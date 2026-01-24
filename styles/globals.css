@@ -99,7 +99,7 @@
     border: 1px solid var(--border-grey-soft);
     border-radius: 4px;
     position: relative;
-    transition: all 0.3s ease;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
   }
   
   .card-cyber:hover {
@@ -112,7 +112,7 @@
     background: var(--color-surface);
     border: 1px solid var(--border-grey-soft);
     border-radius: 2px;
-    transition: all 0.3s ease;
+    transition: border-color 0.3s ease, color 0.3s ease;
   }
   
   .badge-cyber:hover {
@@ -146,10 +146,11 @@
   
   /* Admin dashboard specific styles */
   .input-admin {
-    @apply bg-surface transition-all duration-300;
+    @apply bg-surface;
     border: 1px dashed var(--color-accent);
     border-radius: 4px;
     padding: 0.5rem;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
   }
   
   .input-admin:focus {
@@ -159,10 +160,11 @@
   }
   
   .select-admin {
-    @apply bg-surface transition-all duration-300;
+    @apply bg-surface;
     border: 1px solid var(--color-accent);
     border-radius: 4px;
     padding: 0.5rem;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
   }
   
   .select-admin:hover {
@@ -179,7 +181,7 @@
   .preview-frame {
     border: 1px dashed var(--color-accent);
     border-radius: 4px;
-    transition: all 0.3s ease;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
   }
   
   .preview-frame:hover {
@@ -191,7 +193,7 @@
   .nft-preview {
     border: 2px dashed var(--color-accent);
     padding: 1rem;
-    transition: all 0.3s ease;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
   }
   
   .nft-preview:hover {
@@ -201,7 +203,7 @@
   
   /* Avatar with smooth transition */
   .avatar-cyber {
-    transition: all 0.3s ease;
+    transition: transform 0.3s ease, filter 0.3s ease;
   }
   
   .avatar-cyber:hover {
