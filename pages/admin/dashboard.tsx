@@ -267,8 +267,8 @@ export default function AdminDashboard() {
                   <select 
                     value={currentMonth} 
                     onChange={(e) => setCurrentMonth(e.target.value)}
-                    className="w-full bg-surface border-2 border-accent text-text-primary p-2 font-proxima uppercase text-sm"
-                    style={{ clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))' }}
+                    className="w-full bg-surface border border-accent text-text-primary p-2 font-proxima uppercase text-sm"
+                    style={{ borderRadius: '4px' }}
                   >
                     {MONTHS.map(month => (
                       <option key={month} value={month}>{month}</option>
@@ -280,8 +280,8 @@ export default function AdminDashboard() {
                   <select 
                     value={currentYear} 
                     onChange={(e) => setCurrentYear(Number(e.target.value))}
-                    className="w-full bg-surface border-2 border-accent text-text-primary p-2 font-proxima uppercase text-sm"
-                    style={{ clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))' }}
+                    className="w-full bg-surface border border-accent text-text-primary p-2 font-proxima uppercase text-sm"
+                    style={{ borderRadius: '4px' }}
                   >
                     {YEARS.map(year => (
                       <option key={year} value={year}>{year}</option>
@@ -302,8 +302,8 @@ export default function AdminDashboard() {
                   <select 
                     value={mediaMonth} 
                     onChange={(e) => setMediaMonth(e.target.value)}
-                    className="w-full bg-surface border-2 border-accent text-text-primary p-2 font-proxima uppercase text-sm"
-                    style={{ clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))' }}
+                    className="w-full bg-surface border border-accent text-text-primary p-2 font-proxima uppercase text-sm"
+                    style={{ borderRadius: '4px' }}
                   >
                     {MONTHS.map(month => (
                       <option key={month} value={month}>{month}</option>
@@ -315,8 +315,8 @@ export default function AdminDashboard() {
                   <select 
                     value={mediaYear} 
                     onChange={(e) => setMediaYear(Number(e.target.value))}
-                    className="w-full bg-surface border-2 border-accent text-text-primary p-2 font-proxima uppercase text-sm"
-                    style={{ clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))' }}
+                    className="w-full bg-surface border border-accent text-text-primary p-2 font-proxima uppercase text-sm"
+                    style={{ borderRadius: '4px' }}
                   >
                     {YEARS.map(year => (
                       <option key={year} value={year}>{year}</option>
@@ -337,8 +337,8 @@ export default function AdminDashboard() {
                           value={entry.ipfsCid}
                           onChange={(e) => updateMediaEntry(entry.levelName, e.target.value)}
                           placeholder="Enter IPFS CID (e.g., QmXxx...)"
-                          className="w-full bg-surface border-2 border-accent text-text-primary p-2 font-mono text-xs"
-                          style={{ clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))' }}
+                          className="w-full bg-surface border border-accent text-text-primary p-2 font-mono text-xs"
+                          style={{ borderRadius: '4px' }}
                         />
                       </div>
                       <div className="w-20 h-20 sm:w-24 sm:h-24">
@@ -346,16 +346,16 @@ export default function AdminDashboard() {
                           <img 
                             src={entry.previewUrl} 
                             alt={`${entry.levelName} preview`}
-                            className="w-full h-full object-cover border-2 border-accent"
-                            style={{ clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))' }}
+                            className="w-full h-full object-cover border border-accent"
+                            style={{ borderRadius: '4px' }}
                             onError={(e) => {
                               (e.target as HTMLImageElement).style.display = 'none'
                             }}
                           />
                         ) : (
                           <div 
-                            className="w-full h-full bg-surface border-2 border-accent flex items-center justify-center"
-                            style={{ clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))' }}
+                            className="w-full h-full bg-surface border border-accent flex items-center justify-center"
+                            style={{ borderRadius: '4px' }}
                           >
                             <span className="text-text-secondary text-xs">No preview</span>
                           </div>
@@ -387,13 +387,13 @@ export default function AdminDashboard() {
             </div>
 
             {error && (
-              <div className="mt-3 p-3 bg-error bg-opacity-10 border-2 border-error">
+              <div className="mt-3 p-3 bg-error bg-opacity-10 border border-error" style={{ borderRadius: '4px' }}>
                 <p className="text-error text-sm">{error}</p>
               </div>
             )}
 
             {success && (
-              <div className="mt-3 p-3 bg-accent bg-opacity-10 border-2 border-accent">
+              <div className="mt-3 p-3 bg-accent bg-opacity-10 border border-accent" style={{ borderRadius: '4px' }}>
                 <p className="text-accent text-sm">{success}</p>
               </div>
             )}
