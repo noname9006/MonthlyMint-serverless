@@ -99,6 +99,7 @@
     border: 1px solid var(--border-grey-soft);
     border-radius: 4px;
     position: relative;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
   }
   
   .card-cyber:hover {
@@ -111,6 +112,12 @@
     background: var(--color-surface);
     border: 1px solid var(--border-grey-soft);
     border-radius: 2px;
+    transition: border-color 0.3s ease, color 0.3s ease;
+  }
+  
+  .badge-cyber:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
   }
   
   .input-cyber {
@@ -135,6 +142,73 @@
       transparent
     );
     margin: 24px 0;
+  }
+  
+  /* Admin dashboard specific styles */
+  .input-admin {
+    @apply bg-surface;
+    border: 1px dashed var(--color-accent);
+    border-radius: 4px;
+    padding: 0.5rem;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .input-admin:focus {
+    outline: none;
+    border-color: var(--color-secondary);
+    box-shadow: var(--glow-yellow-soft);
+  }
+  
+  .select-admin {
+    @apply bg-surface;
+    border: 1px solid var(--color-accent);
+    border-radius: 4px;
+    padding: 0.5rem;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .select-admin:hover {
+    border-color: var(--color-secondary);
+    box-shadow: var(--glow-yellow-soft);
+  }
+  
+  .select-admin:focus {
+    outline: none;
+    border-color: var(--color-secondary);
+    box-shadow: var(--glow-yellow-soft);
+  }
+  
+  .preview-frame {
+    border: 1px dashed var(--color-accent);
+    border-radius: 4px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .preview-frame:hover {
+    border-color: var(--color-secondary);
+    box-shadow: var(--glow-yellow-soft);
+  }
+  
+  /* NFT Preview frame with dashed border */
+  .nft-preview {
+    border: 2px dashed var(--color-accent);
+    padding: 1rem;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .nft-preview:hover {
+    border-color: var(--color-secondary);
+    box-shadow: var(--glow-yellow-soft);
+  }
+  
+  /* Avatar with smooth transition */
+  .avatar-cyber {
+    transition: transform 0.3s ease, filter 0.3s ease;
+  }
+  
+  .avatar-cyber:hover {
+    transform: scale(1.05);
+    filter: brightness(1.1);
   }
 }
 
