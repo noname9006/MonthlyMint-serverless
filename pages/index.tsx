@@ -383,9 +383,9 @@ export default function Home() {
                   <div className="mt-4 card-cyber p-4">
                     <div className="flex flex-col items-center gap-3 p-2">
                       {avatarUrl ? (
-                        <img src={avatarUrl} alt="avatar" className="w-18 h-18 rounded-full border-2 border-accent" style={{boxShadow: 'var(--glow-yellow)'}} />
+                        <img src={avatarUrl} alt="avatar" className="avatar-cyber w-18 h-18 rounded-full border-2 border-accent" style={{boxShadow: 'var(--glow-yellow)'}} />
                       ) : (
-                        <span className="w-18 h-18 rounded-full bg-accent text-text-inverse flex items-center justify-center font-bold text-3xl uppercase border-2 border-accent" style={{boxShadow: 'var(--glow-yellow)'}}>
+                        <span className="avatar-cyber w-18 h-18 rounded-full bg-accent text-text-inverse flex items-center justify-center font-bold text-3xl uppercase border-2 border-accent" style={{boxShadow: 'var(--glow-yellow)'}}>
                           {(discordUser.global_name || discordUser.username || '?')[0]}
                         </span>
                       )}

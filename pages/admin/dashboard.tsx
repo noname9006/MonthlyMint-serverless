@@ -267,8 +267,7 @@ export default function AdminDashboard() {
                   <select 
                     value={currentMonth} 
                     onChange={(e) => setCurrentMonth(e.target.value)}
-                    className="w-full bg-surface border border-accent text-text-primary p-2 font-proxima uppercase text-sm"
-                    style={{ borderRadius: '4px' }}
+                    className="select-admin w-full text-text-primary font-proxima uppercase text-sm"
                   >
                     {MONTHS.map(month => (
                       <option key={month} value={month}>{month}</option>
@@ -280,8 +279,7 @@ export default function AdminDashboard() {
                   <select 
                     value={currentYear} 
                     onChange={(e) => setCurrentYear(Number(e.target.value))}
-                    className="w-full bg-surface border border-accent text-text-primary p-2 font-proxima uppercase text-sm"
-                    style={{ borderRadius: '4px' }}
+                    className="select-admin w-full text-text-primary font-proxima uppercase text-sm"
                   >
                     {YEARS.map(year => (
                       <option key={year} value={year}>{year}</option>
@@ -302,8 +300,7 @@ export default function AdminDashboard() {
                   <select 
                     value={mediaMonth} 
                     onChange={(e) => setMediaMonth(e.target.value)}
-                    className="w-full bg-surface border border-accent text-text-primary p-2 font-proxima uppercase text-sm"
-                    style={{ borderRadius: '4px' }}
+                    className="select-admin w-full text-text-primary font-proxima uppercase text-sm"
                   >
                     {MONTHS.map(month => (
                       <option key={month} value={month}>{month}</option>
@@ -315,8 +312,7 @@ export default function AdminDashboard() {
                   <select 
                     value={mediaYear} 
                     onChange={(e) => setMediaYear(Number(e.target.value))}
-                    className="w-full bg-surface border border-accent text-text-primary p-2 font-proxima uppercase text-sm"
-                    style={{ borderRadius: '4px' }}
+                    className="select-admin w-full text-text-primary font-proxima uppercase text-sm"
                   >
                     {YEARS.map(year => (
                       <option key={year} value={year}>{year}</option>
@@ -337,8 +333,7 @@ export default function AdminDashboard() {
                           value={entry.ipfsCid}
                           onChange={(e) => updateMediaEntry(entry.levelName, e.target.value)}
                           placeholder="Enter IPFS CID (e.g., QmXxx...)"
-                          className="w-full bg-surface border border-accent text-text-primary p-2 font-mono text-xs"
-                          style={{ borderRadius: '4px' }}
+                          className="input-admin w-full text-text-primary font-mono text-xs"
                         />
                       </div>
                       <div className="w-20 h-20 sm:w-24 sm:h-24">
@@ -346,16 +341,14 @@ export default function AdminDashboard() {
                           <img 
                             src={entry.previewUrl} 
                             alt={`${entry.levelName} preview`}
-                            className="w-full h-full object-cover border border-accent"
-                            style={{ borderRadius: '4px' }}
+                            className="preview-frame w-full h-full object-cover"
                             onError={(e) => {
                               (e.target as HTMLImageElement).style.display = 'none'
                             }}
                           />
                         ) : (
                           <div 
-                            className="w-full h-full bg-surface border border-accent flex items-center justify-center"
-                            style={{ borderRadius: '4px' }}
+                            className="preview-frame w-full h-full bg-surface flex items-center justify-center"
                           >
                             <span className="text-text-secondary text-xs">No preview</span>
                           </div>

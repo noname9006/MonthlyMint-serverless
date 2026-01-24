@@ -875,7 +875,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
         </div>
 
         <div className="flex-1 min-w-[300px]">
-          <div className="card-cyber p-4 flex justify-center items-center">
+          <div className="nft-preview card-cyber p-4 flex justify-center items-center">
             {isLoadingMonth || isLoadingMedia ? (
               <div className="max-w-full max-h-96 flex items-center justify-center">
                 <p className="text-text-secondary">Loading media...</p>
