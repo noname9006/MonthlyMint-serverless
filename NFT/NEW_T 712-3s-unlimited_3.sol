@@ -18,6 +18,7 @@ contract BotanixAmbassadorNFTUnlimited is ERC721URIStorage, Ownable {
         string credentialType;
         string issuerName;
         bool revoked;
+        uint256 tier;
         string levelName;
         string monthName;
         uint256 yearValue;
@@ -78,7 +79,7 @@ contract BotanixAmbassadorNFTUnlimited is ERC721URIStorage, Ownable {
     address public signerAddress;
     bytes32 public immutable DOMAIN_SEPARATOR;
 
-    event SBTMinted(address indexed to, uint256 indexed tokenId, string credentialType, string mediaURI, string levelName, string monthName, uint256 yearValue);
+    event SBTMinted(address indexed to, uint256 indexed tokenId, string credentialType, string mediaURI, uint256 tier, string levelName, string monthName, uint256 yearValue);
     event BatchMinted(address indexed to, uint256[] tokenIds, uint256 count);
     event MintRecordCreated(uint256 indexed tokenId, address indexed minter, bytes32 dataHash);
     event RequestIdUsed(bytes32 indexed requestId, address indexed user, uint256 indexed tokenId);
@@ -110,6 +111,21 @@ contract BotanixAmbassadorNFTUnlimited is ERC721URIStorage, Ownable {
     function setSignerAddress(address _newSigner) external onlyOwner {
         require(_newSigner != address(0), "INV_SIGNER");
         signerAddress = _newSigner;
+    }
+
+    // ------------------- Helper functions -------------------
+    function _getLevelTier(string memory levelName) internal pure returns (uint256) {
+        bytes32 levelHash = keccak256(bytes(levelName));
+        
+        if (levelHash == keccak256(bytes("Sprout"))) return 0;
+        if (levelHash == keccak256(bytes("Seedling Ambassador"))) return 1;
+        if (levelHash == keccak256(bytes("Blossom Ambassador"))) return 2;
+        if (levelHash == keccak256(bytes("Sequoia Ambassador"))) return 3;
+        if (levelHash == keccak256(bytes("Hyperion Ambassador"))) return 4;
+        if (levelHash == keccak256(bytes("Botanist"))) return 5;
+        
+        // Default to 0 for unknown levels
+        return 0;
     }
 
     // ------------------- Tier config -------------------
@@ -327,12 +343,15 @@ contract BotanixAmbassadorNFTUnlimited is ERC721URIStorage, Ownable {
     ) internal {
         _tokenIdCounter++;
 
+        uint256 tier = _getLevelTier(levelName);
+
         tokenData[tokenId] = TokenData({
             metadata: metadata,
             mediaURI: mediaURI,
             credentialType: credentialType,
             issuerName: issuerName,
             revoked: false,
+            tier: tier,
             levelName: levelName,
             monthName: monthName,
             yearValue: yearValue,
@@ -346,9 +365,9 @@ contract BotanixAmbassadorNFTUnlimited is ERC721URIStorage, Ownable {
         lastMintTimestamp[to] = block.timestamp;
         totalMintedByUser[to]++;
 
-        TierInfo storage tier = tiers[levelName][yearValue][monthName];
-        tier.currentSupply++;
-        emit TierSupplyUpdated(levelName, yearValue, monthName, tier.currentSupply);
+        TierInfo storage tierInfo = tiers[levelName][yearValue][monthName];
+        tierInfo.currentSupply++;
+        emit TierSupplyUpdated(levelName, yearValue, monthName, tierInfo.currentSupply);
 
         _createMintRecord(tokenId, to, metadata, mediaURI, credentialType, issuerName, signature);
 
@@ -357,7 +376,7 @@ contract BotanixAmbassadorNFTUnlimited is ERC721URIStorage, Ownable {
         tokenTransferHistory[tokenId].push(to);
         nonces[to]++;
 
-        emit SBTMinted(to, tokenId, credentialType, mediaURI, levelName, monthName, yearValue);
+        emit SBTMinted(to, tokenId, credentialType, mediaURI, tier, levelName, monthName, yearValue);
         emit RequestIdUsed(requestId, to, tokenId);
     }
 
@@ -554,7 +573,7 @@ contract BotanixAmbassadorNFTUnlimited is ERC721URIStorage, Ownable {
 
         string memory description = bytes(tier.description).length > 0 
             ? tier.description 
-            : string(abi.encodePacked("Botanix Ambassador NFT for ", data.levelName, " tier"));
+            : string(abi.encodePacked(data.levelName, ", ", data.monthName, " ", data.yearValue.toString()));
 
         string memory json = Base64.encode(
 			bytes(
@@ -567,6 +586,9 @@ contract BotanixAmbassadorNFTUnlimited is ERC721URIStorage, Ownable {
 					'","image":"',
 					data.mediaURI,
 					'","attributes":[',
+					'{"trait_type":"Tier","value":"',
+					data.tier.toString(),
+					'"},',
 					'{"trait_type":"Level","value":"',
 					data.levelName,
 					'"},',
