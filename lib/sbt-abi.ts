@@ -14,6 +14,7 @@ export const SBT_ABI = [
       { "indexed": true, "internalType": "uint256", "name": "tokenId", "type": "uint256" },
       { "indexed": false, "internalType": "string", "name": "credentialType", "type": "string" },
       { "indexed": false, "internalType": "string", "name": "mediaURI", "type": "string" },
+      { "indexed": false, "internalType": "uint256", "name": "tier", "type": "uint256" },
       { "indexed": false, "internalType": "string", "name": "levelName", "type": "string" },
       { "indexed": false, "internalType": "string", "name": "monthName", "type": "string" },
       { "indexed": false, "internalType": "uint256", "name": "yearValue", "type": "uint256" }

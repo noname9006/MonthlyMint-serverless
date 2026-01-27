@@ -21,7 +21,7 @@ interface SBTMinterProps {
 const FALLBACK_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect width="200" height="200" fill="%23334155"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%2394a3b8" font-size="14"%3EImage not available%3C/text%3E%3C/svg%3E'
 
 // Event signature for SBTMinted event
-const SBT_MINTED_EVENT_SIGNATURE = 'SBTMinted(address,uint256,string,string,string,string,uint256)'
+const SBT_MINTED_EVENT_SIGNATURE = 'SBTMinted(address,uint256,string,string,uint256,string,string,uint256)'
 
 interface UnmintedLowerTier {
   id: string
