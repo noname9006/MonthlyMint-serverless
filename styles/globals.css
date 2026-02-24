@@ -3,48 +3,59 @@
 @tailwind utilities;
 
 :root {
-  /* Botanix Color Palette - Cyber-Bauhaus adaptation */
-  --color-primary: #ffd966; /* dark yellow */
-  --color-primary-dark: #211d1d; /* dark grey */
-  --color-secondary: #fff366; /* light yellow */
-  --color-secondary-light: #ffffff; /* white */
-  
-  /* Cyber-Bauhaus colors */
-  --color-background: #211d1d; /* warmer dark instead of #0a0a0a */
-  --color-surface: #292525; /* lighter instead of #1a1a1a */
-  --color-border: #ffd966; /* yellow borders */
-  --color-text-primary: #ffffff; /* white text */
-  --color-text-secondary: #aaa; /* softer grey instead of #a0a0a0 */
-  --color-text-inverse: #0a0a0a; /* black on yellow */
-  --color-accent: #ffd966; /* yellow accent */
-  --color-accent-neon: #00ff88; /* neon green */
+  /* Glassmorphism Cyber-Bauhaus tokens */
+  --yellow-dark: #ffd966;
+  --yellow-light: #fff366;
+  --glass-bg: rgba(30, 25, 20, 0.72);
+  --glass-inner: rgba(255, 255, 255, 0.04);
+  --border-grey: rgba(255, 255, 255, 0.12);
+
+  /* Legacy aliases kept for admin dashboard compatibility */
+  --color-primary: #ffd966;
+  --color-primary-dark: #211d1d;
+  --color-secondary: #fff366;
+  --color-secondary-light: #ffffff;
+  --color-background: #211d1d;
+  --color-surface: #292525;
+  --color-border: #ffd966;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #aaa;
+  --color-text-inverse: #0a0a0a;
+  --color-accent: #ffd966;
+  --color-accent-neon: #00ff88;
   --color-error: #ff3366;
   --color-success: #00ff88;
-  
-  /* Cyber-Bauhaus effects */
   --glow-yellow: 0 0 10px rgba(255, 217, 102, 0.5), 0 0 20px rgba(255, 217, 102, 0.3);
   --glow-yellow-soft: 0 0 15px rgba(255, 217, 102, 0.1);
-  --glow-neon: 0 0 10px rgba(0, 255, 136, 0.5), 0 0 20px rgba(0, 255, 136, 0.3);
-  --border-width: 3px;
   --border-grey-soft: rgba(255, 255, 255, 0.2);
-  --border-width-soft: 1px;
-  
+
   /* Font stacks */
   --font-geist: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-proxima: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-proxima: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
 @layer base {
   html {
     font-family: var(--font-geist);
   }
-  
+
   body {
-    @apply bg-background text-text-primary;
     margin: 0;
     padding: 0;
+    color: #fff;
+    background: url("/background1_inverted.png") center center / cover no-repeat fixed;
+    background-color: #0d0b09;
   }
-  
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background: rgba(0, 0, 0, 0.7);
+    pointer-events: none;
+  }
+
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-proxima);
     font-weight: 700;
@@ -53,98 +64,162 @@
 }
 
 @layer components {
-  .btn-cyber {
-    @apply px-6 py-3 bg-accent text-text-inverse font-bold uppercase tracking-wider transition-all duration-200;
-    border: 1px solid var(--color-accent);
-    border-radius: 2px;
-    box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.5);
-  }
-  
-  .btn-cyber:hover:not(:disabled) {
-    background: var(--color-background);
-    color: var(--color-accent);
-    box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.5);
-    transform: translate(-1px, -1px);
-  }
-  
-  .btn-cyber:active:not(:disabled) {
-    box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.5);
-    transform: translateY(2px);
-  }
-  
-  .btn-cyber:disabled {
-    @apply opacity-40 cursor-not-allowed;
-    background: var(--color-surface);
-    color: #d4c050;
-    border-color: var(--color-text-secondary);
-  }
-  
-  .btn-cyber-secondary {
-    @apply px-6 py-3 bg-surface font-bold uppercase tracking-wider transition-all duration-200;
-    color: var(--color-error);
-    border: 1px solid var(--color-error);
-    border-radius: 2px;
-    box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.5);
-  }
-  
-  .btn-cyber-secondary:hover {
-    background: var(--color-error);
-    color: var(--color-background);
-    box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.5);
-    transform: translate(-1px, -1px);
-  }
-  
+  /* === Glassmorphism card === */
   .card-cyber {
-    @apply bg-surface;
-    border: 1px solid var(--border-grey-soft);
+    background: linear-gradient(135deg, rgba(40, 33, 22, 0.82) 0%, rgba(28, 22, 14, 0.88) 100%);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    border: 1px solid var(--border-grey);
     border-radius: 4px;
     position: relative;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
   }
-  
+
   .card-cyber:hover {
-    border-color: var(--color-accent);
+    border-color: var(--yellow-dark);
+    box-shadow: 0 0 35px rgba(255, 217, 102, 0.15);
+  }
+
+  /* === Inner connect module === */
+  .connect-module {
+    background: var(--glass-inner);
+    border: 1px solid var(--border-grey);
+    border-radius: 3px;
+    padding: 14px 16px;
+    transition: border-color 0.3s ease;
+  }
+
+  .connect-module.connected {
+    border-color: var(--yellow-dark);
+  }
+
+  /* === Status dot === */
+  .status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ff3366;
+    flex-shrink: 0;
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .status-dot.connected {
+    background: var(--yellow-dark);
+    box-shadow: 0 0 6px rgba(255, 217, 102, 0.8);
+  }
+
+  /* === Step indicator === */
+  .step-indicator {
+    font-family: "Courier New", Courier, monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--yellow-dark);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  /* === Data point (monospace label) === */
+  .data-point {
+    font-family: "Courier New", Courier, monospace;
+    font-size: 0.72rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  /* === Data highlight (yellow value) === */
+  .data-highlight {
+    font-family: "Courier New", Courier, monospace;
+    font-weight: 700;
+    color: var(--yellow-dark);
+    border-bottom: 1px solid var(--yellow-dark);
+    display: inline-block;
+  }
+
+  /* === Primary CTA button === */
+  .btn-cyber {
+    display: inline-block;
+    padding: 12px 24px;
+    background: var(--yellow-dark);
+    color: #111;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 0.8rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border: none;
+    border-radius: 2px;
+    box-shadow: 6px 6px 0px #000;
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+
+  .btn-cyber:hover:not(:disabled) {
+    transform: translate(-2px, -2px);
+    box-shadow: 8px 8px 0px #000;
+  }
+
+  .btn-cyber:active:not(:disabled) {
+    transform: translate(2px, 2px);
+    box-shadow: 3px 3px 0px #000;
+  }
+
+  .btn-cyber:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    box-shadow: 3px 3px 0px #000;
+  }
+
+  /* === Secondary button (red outline) === */
+  .btn-cyber-secondary {
+    display: inline-block;
+    padding: 12px 24px;
+    background: transparent;
+    color: var(--color-error);
+    font-family: "Courier New", Courier, monospace;
+    font-size: 0.8rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border: 1px solid var(--color-error);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+
+  .btn-cyber-secondary:hover {
+    background: var(--color-error);
+    color: #111;
+  }
+
+  /* === NFT preview frame === */
+  .nft-preview {
+    border: 2px dashed var(--yellow-dark);
+    background: var(--glass-inner);
+    padding: 1rem;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .nft-preview:hover {
+    border-color: var(--yellow-light);
     box-shadow: var(--glow-yellow-soft);
   }
-  
+
+  /* === Badge === */
   .badge-cyber {
-    @apply px-3 py-1 text-xs font-bold uppercase tracking-wider;
-    background: var(--color-surface);
-    border: 1px solid var(--border-grey-soft);
+    font-family: "Courier New", Courier, monospace;
+    padding: 3px 8px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    background: var(--glass-inner);
+    border: 1px solid var(--border-grey);
     border-radius: 2px;
-    transition: border-color 0.3s ease, color 0.3s ease;
   }
-  
-  .badge-cyber:hover {
-    border-color: var(--color-accent);
-    color: var(--color-accent);
-  }
-  
-  .input-cyber {
-    @apply bg-surface transition-all duration-200;
-    border: 1px solid var(--border-grey-soft);
-    border-radius: 4px;
-  }
-  
-  .input-cyber:focus {
-    outline: none;
-    border-color: var(--color-accent);
-    box-shadow: 0 0 0 3px var(--glow-yellow-soft);
-  }
-  
-  .divider-cyber {
-    height: 1px;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      var(--border-grey-soft) 20%,
-      var(--border-grey-soft) 80%,
-      transparent
-    );
-    margin: 24px 0;
-  }
-  
-  /* Admin dashboard specific styles */
+
+  /* === Admin dashboard specific styles (kept for compatibility) === */
   .input-admin {
     @apply bg-surface;
     border: 1px dashed var(--color-accent);
@@ -152,13 +227,13 @@
     padding: 0.5rem;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
   }
-  
+
   .input-admin:focus {
     outline: none;
     border-color: var(--color-secondary);
     box-shadow: var(--glow-yellow-soft);
   }
-  
+
   .select-admin {
     @apply bg-surface;
     border: 1px solid var(--color-accent);
@@ -166,46 +241,46 @@
     padding: 0.5rem;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
   }
-  
+
   .select-admin:hover {
     border-color: var(--color-secondary);
     box-shadow: var(--glow-yellow-soft);
   }
-  
+
   .select-admin:focus {
     outline: none;
     border-color: var(--color-secondary);
     box-shadow: var(--glow-yellow-soft);
   }
-  
+
+  /* === Divider (kept for any remaining uses) === */
+  .divider-cyber {
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--border-grey) 20%,
+      var(--border-grey) 80%,
+      transparent
+    );
+    margin: 24px 0;
+  }
+
   .preview-frame {
     border: 1px dashed var(--color-accent);
     border-radius: 4px;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
   }
-  
+
   .preview-frame:hover {
     border-color: var(--color-secondary);
     box-shadow: var(--glow-yellow-soft);
   }
-  
-  /* NFT Preview frame with dashed border */
-  .nft-preview {
-    border: 2px dashed var(--color-accent);
-    padding: 1rem;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
-  }
-  
-  .nft-preview:hover {
-    border-color: var(--color-secondary);
-    box-shadow: var(--glow-yellow-soft);
-  }
-  
-  /* Avatar with smooth transition */
+
   .avatar-cyber {
     transition: transform 0.3s ease, filter 0.3s ease;
   }
-  
+
   .avatar-cyber:hover {
     transform: scale(1.05);
     filter: brightness(1.1);
