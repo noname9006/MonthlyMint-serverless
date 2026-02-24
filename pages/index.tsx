@@ -335,13 +335,7 @@ export default function Home() {
         </div>
 
         {/* 3-column bento grid */}
-        <div className="main-container" style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: '24px',
-          maxWidth: '1200px',
-          width: '100%',
-        }}>
+        <div className="main-container">
 
           {/* ── CARD 1 — STEP 01 // INPUTS — Link Sources ── */}
           <div className="bento-card" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -368,7 +362,7 @@ export default function Home() {
                   {discordLoading ? 'WAITING FOR DISCORD…' : 'CONNECT DISCORD'}
                 </button>
               ) : (
-                <button onClick={handleDiscordLogout} className="mint-button" style={{ fontSize: '0.85rem', padding: '12px', background: 'transparent', color: '#ff3366', border: '1px solid #ff3366', boxShadow: '4px 4px 0px #000' }}>
+                <button onClick={handleDiscordLogout} className="logout-button">
                   LOGOUT
                 </button>
               )}
@@ -433,7 +427,6 @@ export default function Home() {
 
             <p className="data-point">
               MINT PERIOD: {' '}
-              {/* We show a loading placeholder — actual month info is in SBTMinter */}
               <span className="data-highlight">—</span>
             </p>
 

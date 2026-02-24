@@ -352,11 +352,40 @@
     max-width: 1200px;
     width: 100%;
   }
+
+  /* Logout / destructive action button */
+  .logout-button {
+    background: transparent;
+    color: #ff3366;
+    border: 1px solid #ff3366;
+    font-weight: 900;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    padding: 12px;
+    width: 100%;
+    box-shadow: 4px 4px 0px #000;
+    border-radius: 2px;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: background-color 0.15s ease, transform 0.1s ease, box-shadow 0.1s ease;
+  }
+
+  .logout-button:hover {
+    background: #ff3366;
+    color: #111;
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px #000;
+  }
+
+  .logout-button:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px #000;
+  }
 }
 
 @media (max-width: 900px) {
   .main-container {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: 1fr;
   }
 }
 
