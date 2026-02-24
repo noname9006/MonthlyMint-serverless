@@ -341,11 +341,6 @@ export default function Home() {
           gridTemplateColumns: 'repeat(3, 1fr)',
           gap: 24,
         }}>
-          <style>{`
-            @media (max-width: 900px) {
-              .bento-grid { grid-template-columns: 1fr !important; }
-            }
-          `}</style>
 
           {/* ── Card 1: STEP 01 // INPUTS ── */}
           <div className="card-cyber" style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -379,7 +374,7 @@ export default function Home() {
             </div>
 
             {/* Wallet connect module */}
-            <div className={`connect-module${isConnected ? ' connected' : ''}${!isDiscordVerified ? ' opacity-40 pointer-events-none' : ''}`}
+            <div className={`connect-module${isConnected ? ' connected' : ''}`}
               style={{ opacity: isDiscordVerified ? undefined : 0.4, pointerEvents: isDiscordVerified ? undefined : 'none' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                 <span className={`status-dot${isConnected ? ' connected' : ''}`}></span>

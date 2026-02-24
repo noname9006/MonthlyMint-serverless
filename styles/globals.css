@@ -43,7 +43,7 @@
     margin: 0;
     padding: 0;
     color: #fff;
-    background: url("/background1_inverted.png") center center / cover no-repeat fixed;
+    background: url("/background1_inverted.png") no-repeat center center / cover fixed;
     background-color: #0d0b09;
   }
 
@@ -284,6 +284,12 @@
   .avatar-cyber:hover {
     transform: scale(1.05);
     filter: brightness(1.1);
+  }
+}
+
+@media (max-width: 900px) {
+  .bento-grid {
+    grid-template-columns: 1fr !important;
   }
 }
 
