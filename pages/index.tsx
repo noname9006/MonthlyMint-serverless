@@ -323,168 +323,194 @@ export default function Home() {
         <title>Botanix Ambassador Program</title>
         <meta name="description" content="Botanix Ambassador Program" />
       </Head>
-      <main className="min-h-screen bg-background py-6 sm:py-12 px-2 sm:px-4 flex justify-center">
-        <section className="w-full max-w-4xl card-cyber p-4 sm:p-8 space-y-6 sm:space-y-8">
-          <div className="flex items-start justify-between gap-4 flex-wrap pb-4 sm:pb-6">
+      <main style={{ position: 'relative', zIndex: 1, minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+        {/* Branding header */}
+        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+          <p style={{ fontFamily: "'Courier New', monospace", fontSize: '1.5rem', fontWeight: 900, color: '#ffd966', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
+            Botanix • Ambassador Program
+          </p>
+          <p style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", fontSize: '0.95rem', color: '#bbb', marginTop: '8px', fontWeight: 400 }}>
+            Immutable proof of your contributions. Mint your achievements monthly.
+          </p>
+        </div>
+
+        {/* 3-column bento grid */}
+        <div className="main-container" style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: '24px',
+          maxWidth: '1200px',
+          width: '100%',
+        }}>
+
+          {/* ── CARD 1 — STEP 01 // INPUTS — Link Sources ── */}
+          <div className="bento-card" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div>
-              <p className="text-xs sm:text-sm font-bold uppercase tracking-widest text-accent mb-2">Botanix • Ambassador Program</p>
-              <p className="text-sm sm:text-base text-text-secondary">Immutable proof of your contributions. Mint your achievements monthly.</p>
+              <p className="step-indicator">STEP 01 // INPUTS</p>
+              <h2 style={{ margin: '4px 0 0', fontSize: '1.25rem', fontWeight: 900, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Link Sources</h2>
             </div>
-          </div>
-          
-          <div className="divider-cyber"></div>
 
-          <div className="card-cyber p-4 sm:p-6">
+            {/* Discord connect module */}
+            <div className={`connect-module${isDiscordVerified ? ' connected' : ''}`}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                <span className="status-indicator"></span>
+                <span className="data-point" style={{ fontWeight: 'bold', color: isDiscordVerified ? '#ffd966' : '#bbb' }}>
+                  {isDiscordVerified ? 'DISCORD CONNECTED' : 'DISCORD DISCONNECTED'}
+                </span>
+              </div>
+              {isDiscordVerified && discordUser && (
+                <p className="data-point" style={{ marginBottom: '10px' }}>
+                  User: <span className="data-highlight">{discordUser.global_name || discordUser.username}</span>
+                </p>
+              )}
+              {!isDiscordVerified ? (
+                <button onClick={openDiscordPopup} disabled={discordLoading} className="mint-button" style={{ fontSize: '0.85rem', padding: '12px' }}>
+                  {discordLoading ? 'WAITING FOR DISCORD…' : 'CONNECT DISCORD'}
+                </button>
+              ) : (
+                <button onClick={handleDiscordLogout} className="mint-button" style={{ fontSize: '0.85rem', padding: '12px', background: 'transparent', color: '#ff3366', border: '1px solid #ff3366', boxShadow: '4px 4px 0px #000' }}>
+                  LOGOUT
+                </button>
+              )}
+            </div>
+
+            {/* Wallet connect module */}
+            <div className={`connect-module${isConnected ? ' connected' : ''}`}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                <span className="status-indicator"></span>
+                <span className="data-point" style={{ fontWeight: 'bold', color: isConnected ? '#ffd966' : '#bbb' }}>
+                  {!isDiscordVerified ? 'WEB3 LOCKED' : isConnected ? 'WEB3 LIVE' : 'WEB3 DISCONNECTED'}
+                </span>
+              </div>
+              {isConnected && address && (
+                <p className="data-point" style={{ marginBottom: '10px' }}>
+                  Addr: <span className="data-highlight">{address.slice(0, 6)}…{address.slice(-4)}</span>
+                </p>
+              )}
+              {isDiscordVerified && !isConnected && (
+                <div style={{ opacity: 1 }}>
+                  <ConnectButton label="CONNECT WALLET" showBalance={false} chainStatus="none" />
+                </div>
+              )}
+              {isConnected && (
+                <div>
+                  <ConnectButton label="CONNECTED" showBalance={false} chainStatus="none" />
+                </div>
+              )}
+            </div>
+
+            {/* Admin Dashboard button */}
+            {isAdmin && (
+              <button onClick={() => router.push('/admin/dashboard')} className="mint-button" style={{ fontSize: '0.85rem', padding: '12px' }}>
+                ADMIN DASHBOARD
+              </button>
+            )}
+
+            {discordError && <p style={{ color: '#ff3366', fontFamily: "'Courier New', monospace", fontSize: '0.8rem', margin: 0 }}>{discordError}</p>}
+          </div>
+
+          {/* ── CARD 2 — STEP 02 // ANALYSIS — Performance Data ── */}
+          <div className="bento-card" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <p className="step-indicator">STEP 02 // ANALYSIS</p>
+              <h2 style={{ margin: '4px 0 0', fontSize: '1.25rem', fontWeight: 900, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Performance Data</h2>
+            </div>
+
+            {isDiscordVerified && (
+              <div>
+                <p className="data-point" style={{ marginBottom: '4px' }}>DISCORD ROLE DETECTED:</p>
+                <p style={{ fontFamily: "'Courier New', monospace", fontSize: '1.4rem', fontWeight: 900, color: '#ffd966', margin: 0, letterSpacing: '0.05em' }}>
+                  {highestRole ? highestRole.name : 'NO ROLE DETECTED'}
+                </p>
+              </div>
+            )}
+
+            {isConnected && address && (
+              <p className="data-point">
+                WALLET ADDRESS: <span className="data-highlight">{address.slice(0, 6)}…{address.slice(-4)}</span>
+              </p>
+            )}
+
+            <p className="data-point">
+              MINT PERIOD: {' '}
+              {/* We show a loading placeholder — actual month info is in SBTMinter */}
+              <span className="data-highlight">—</span>
+            </p>
+
+            <div style={{ marginTop: 'auto', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+              {canProceedToMint && !alreadyMinted ? (
+                <p className="data-point" style={{ color: '#ffd966' }}>STATUS: <span style={{ color: '#fff366', fontWeight: 'bold' }}>MINT ELIGIBLE_</span></p>
+              ) : alreadyMinted ? (
+                <p className="data-point">STATUS: <span style={{ color: '#bbb', fontWeight: 'bold' }}>ALREADY MINTED_</span></p>
+              ) : (
+                <p className="data-point">STATUS: <span style={{ color: '#bbb', fontWeight: 'bold' }}>AWAITING INPUTS_</span></p>
+              )}
+            </div>
+
+            {discordError && <p style={{ color: '#ff3366', fontFamily: "'Courier New', monospace", fontSize: '0.8rem', margin: 0 }}>{discordError}</p>}
+          </div>
+
+          {/* ── CARD 3 — STEP 03 // EXECUTE — Mint Artifact ── */}
+          <div className="bento-card" style={{ borderColor: '#ffd966', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <p className="step-indicator">STEP 03 // EXECUTE</p>
+              <h2 style={{ margin: '4px 0 0', fontSize: '1.25rem', fontWeight: 900, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Mint Artifact</h2>
+            </div>
+
+            {/* NFT Preview placeholder (real preview is in modal) */}
+            <div className="nft-preview-placeholder">
+              {canProceedToMint ? (
+                <span style={{ fontSize: '0.9rem', letterSpacing: '0.05em' }}>[ PREVIEW IN MINT MODAL ]</span>
+              ) : (
+                <span style={{ fontSize: '0.9rem', letterSpacing: '0.05em' }}>[ CONNECT TO PREVIEW ]</span>
+              )}
+            </div>
+
+            {/* Data rows */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <p className="data-point">
+                TIER: <span className="data-highlight">{highestRole ? highestRole.name : 'N/A'}</span>
+              </p>
+              <p className="data-point">
+                PERIOD: <span className="data-highlight">—</span>
+              </p>
+              <p className="data-point">
+                STATUS: <span className="data-highlight">{alreadyMinted ? 'MINTED' : canProceedToMint ? 'ELIGIBLE' : 'PENDING'}</span>
+              </p>
+            </div>
+
+            {/* Mint button */}
+            <button
+              onClick={() => setShowMintModal(true)}
+              disabled={!canProceedToMint}
+              className="mint-button"
+            >
+              {alreadyMinted ? 'MINTED' : 'INITIALIZE MINT'}
+            </button>
+          </div>
+        </div>
+
+        {/* Responsive style handled in globals.css */}
+        {/* Mint Modal */}
+        {highestRole && discordUser && (
+          <MintModal isOpen={showMintModal} onClose={() => setShowMintModal(false)}>
             <div className="mb-4 sm:mb-6">
-              <h2 className="text-xl sm:text-2xl font-bold font-proxima text-text-primary uppercase">Step 1: Authorise using your Discord account</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold text-white uppercase text-center" style={{ fontFamily: "'Courier New', monospace" }}>Mint Your NFT</h2>
+              <p className="text-center text-sm sm:text-base mt-2" style={{ color: '#bbb' }}>
+                Level: <span style={{ color: '#ffd966', fontWeight: 'bold' }}>{highestRole.name}</span>
+              </p>
             </div>
-            
-            <div className="flex gap-5 flex-wrap">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2 mb-3">
-                  <h3 className="text-base sm:text-lg font-bold font-proxima text-text-primary uppercase">Discord check</h3>
-                  <span className={`badge-cyber ${isDiscordVerified ? 'text-accent' : 'text-text-secondary'}`}>
-                    {isDiscordVerified ? 'Ready' : 'Required'}
-                  </span>
-                </div>
-
-                <div className="flex gap-3">
-                  {!isDiscordVerified && (
-                    <button 
-                      onClick={openDiscordPopup} 
-                      disabled={discordLoading} 
-                      className="btn-cyber flex-1"
-                    >
-                      {discordLoading ? 'Waiting for Discord…' : 'Sign in with Discord'}
-                    </button>
-                  )}
-                  {isDiscordVerified && (
-                    <button onClick={handleDiscordLogout} className="btn-cyber-secondary flex-1">
-                      Logout
-                    </button>
-                  )}
-                </div>
-
-                {/* Admin Dashboard Button */}
-                {isAdmin && (
-                  <div className="mt-3">
-                    <button 
-                      onClick={() => router.push('/admin/dashboard')} 
-                      className="btn-cyber w-full"
-                    >
-                      Admin Dashboard
-                    </button>
-                  </div>
-                )}
-
-                {discordError && <p className="text-error mt-3 text-sm">{discordError}</p>}
-
-                {discordUser && (
-                  <div className="mt-4 card-cyber p-4">
-                    <div className="flex flex-col items-center gap-3 p-2">
-                      {avatarUrl ? (
-                        <img src={avatarUrl} alt="avatar" className="avatar-cyber w-18 h-18 rounded-full border-2 border-accent" style={{boxShadow: 'var(--glow-yellow)'}} />
-                      ) : (
-                        <span className="avatar-cyber w-18 h-18 rounded-full bg-accent text-text-inverse flex items-center justify-center font-bold text-3xl uppercase border-2 border-accent" style={{boxShadow: 'var(--glow-yellow)'}}>
-                          {(discordUser.global_name || discordUser.username || '?')[0]}
-                        </span>
-                      )}
-                      <span className="text-lg font-bold text-text-primary uppercase tracking-wide">
-                        {discordUser.global_name || discordUser.username}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="divider-cyber"></div>
-
-          <div className="card-cyber p-4 sm:p-6">
-            <div className="mb-4 sm:mb-6">
-              <h2 className="text-xl sm:text-2xl font-bold font-proxima text-text-primary uppercase">Step 2: Connect your wallet</h2>
-            </div>
-            
-            <div className="flex gap-5 flex-wrap">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2 mb-3">
-                  <h3 className="text-base sm:text-lg font-bold font-proxima text-text-primary uppercase">Connect wallet</h3>
-                  <span className={`badge-cyber ${isDiscordVerified ? 'text-accent' : 'text-text-secondary'}`}>
-                    {isDiscordVerified ? 'Available' : 'Locked'}
-                  </span>
-                </div>
-                <div className={isDiscordVerified ? '' : 'opacity-40 pointer-events-none'}>
-                  <ConnectButton label="Connect wallet" showBalance={false} chainStatus="name" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Mint Section - shown when wallet and discord are connected */}
-          {isDiscordVerified && isConnected && (
-            <div className="mt-6 sm:mt-8">
-              <div className="divider-cyber mb-6 sm:mb-8"></div>
-              <div className="card-cyber p-4 sm:p-6">
-                <div className="mb-4 sm:mb-6">
-                  <h2 className="text-xl sm:text-2xl font-bold font-proxima text-text-primary uppercase">Step 3: Mint your NFT</h2>
-                </div>
-                
-                <div className="flex gap-5 flex-wrap">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2 mb-3">
-                      <h3 className="text-base sm:text-lg font-bold font-proxima text-text-primary uppercase">Ready to mint</h3>
-                      <span className={`badge-cyber ${canProceedToMint ? 'text-accent' : 'text-text-secondary'}`}>
-                        {canProceedToMint ? 'Ready' : 'Checking...'}
-                      </span>
-                    </div>
-                    
-                    {highestRole ? (
-                      <>
-                        <p className="text-sm sm:text-base text-text-secondary mb-4">
-                          Your level: <span className="text-accent font-bold">{highestRole.name}</span>
-                        </p>
-                        <button
-                          onClick={() => setShowMintModal(true)}
-                          disabled={!canProceedToMint}
-                          className="btn-cyber w-full"
-                        >
-                          Proceed to Mint
-                        </button>
-                      </>
-                    ) : (
-                      <p className="text-sm sm:text-base text-text-secondary mb-4">
-                        <a href="https://discord.gg/2D95PBCM2g" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
-                          Join Botanix Discord
-                        </a> today to be eligible.
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {/* Mint Modal */}
-          {highestRole && discordUser && (
-            <MintModal isOpen={showMintModal} onClose={() => setShowMintModal(false)}>
-              <div className="mb-4 sm:mb-6">
-                <h2 className="text-2xl sm:text-3xl font-bold font-proxima text-text-primary uppercase text-center">Mint Your NFT</h2>
-                <p className="text-center text-sm sm:text-base text-text-secondary mt-2">Level: <span className="text-accent font-bold">{highestRole.name}</span></p>
-              </div>
-              <SBTMinter 
-                discordId={discordUser.id} 
-                roleName={highestRole.name} 
-                sectionNumber={0}
-                alreadyMinted={alreadyMinted}
-                hasLowerTierAvailable={hasLowerTierAvailable}
-              />
-            </MintModal>
-          )}
-        </section>
+            <SBTMinter
+              discordId={discordUser.id}
+              roleName={highestRole.name}
+              sectionNumber={0}
+              alreadyMinted={alreadyMinted}
+              hasLowerTierAvailable={hasLowerTierAvailable}
+            />
+          </MintModal>
+        )}
       </main>
     </>
   )
 }
-
 

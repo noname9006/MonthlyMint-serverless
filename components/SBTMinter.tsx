@@ -875,11 +875,9 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
         </div>
 
         <div className="flex-1 min-w-[300px]">
-          <div className="nft-preview card-cyber p-4 flex justify-center items-center">
+          <div className="nft-preview-placeholder" style={{ height: 'auto', minHeight: '180px' }}>
             {isLoadingMonth || isLoadingMedia ? (
-              <div className="max-w-full max-h-96 flex items-center justify-center">
-                <p className="text-text-secondary">Loading media...</p>
-              </div>
+              <p style={{ fontFamily: "'Courier New', monospace", color: '#ffd966', fontSize: '0.9rem' }}>[ LOADING MEDIA... ]</p>
             ) : mediaGatewayURL ? (
               <img 
                 src={mediaGatewayURL} 
@@ -891,11 +889,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
                 }}
               />
             ) : (
-              <img 
-                src={FALLBACK_IMAGE} 
-                alt="No media available"
-                className="max-w-full max-h-96 object-contain"
-              />
+              <p style={{ fontFamily: "'Courier New', monospace", color: '#ffd966', fontSize: '0.9rem' }}>[ NO MEDIA CONFIGURED ]</p>
             )}
           </div>
         </div>
