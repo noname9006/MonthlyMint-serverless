@@ -48,7 +48,7 @@
     padding: 0;
     color: var(--white);
     background-color: #0a0808;
-    background-image: url('/background1_inverted.svg');
+    background-image: url('/background1_inverted.png');
     background-repeat: no-repeat;
     background-position: top right;
     background-size: cover;
