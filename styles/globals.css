@@ -50,8 +50,8 @@
     background-color: #0a0808;
     background-image: url('/background1_inverted.png');
     background-repeat: no-repeat;
-    background-position: top right;
-    background-size: cover;
+    background-position: bottom right;
+    background-size: auto;
     position: relative;
     min-height: 100vh;
   }
