@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cyber-Bauhaus Industrial Compact</title>
+
+<style>
+:root {
+  --yellow-dark: #ffd966;
+  --yellow-light: #fff366;
+  --white: #ffffff;
+
+  /* Stronger border separation */
+  --border-grey: rgba(255, 255, 255, 0.25);
+
+  /* Brighter warm-tinted glass */
+  --glass-bg: linear-gradient(
+    145deg,
+rgba(255,245,200,0.08),
+rgba(255,255,255,0.06)
+  );
+
+  --glass-inner: rgba(120,120,120,0.32);
+
+  --font-primary: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-secondary: 'Courier New', monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  font-family: var(--font-primary);
+  color: var(--white);
+}
+
+/* ================= BACKGROUND ================= */
+
+body {
+  background: url("background1_inverted.png") center center / cover no-repeat;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 0;
+}
+/* ================= LAYOUT ================= */
+
+.main-container {
+  position: relative;
+  z-index: 1;
+
+  max-width: 1200px;
+  width: 100%;
+
+  padding: 20px;
+  margin: 0 auto;
+
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 24px;
+  align-content: center;
+  height: 100vh;
+}
+
+@media (max-width: 900px) {
+  .main-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ================= CARD ================= */
+
+.bento-card {
+  position: relative;
+
+  background: var(--glass-bg);
+
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+
+  border: 1px solid var(--border-grey);
+  border-radius: 4px;
+
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.15), /* rim separation */
+    0 25px 80px rgba(0,0,0,0.95),
+    inset 0 0 14px rgba(255,255,255,0.06);
+
+  transition: 0.25s ease;
+}
+
+/* subtle metal highlight */
+.bento-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255,255,255,0.3);
+  opacity: 0.3;
+}
+
+.bento-card:hover {
+  border-color: var(--yellow-dark);
+  box-shadow:
+    0 0 0 1px rgba(255,217,102,0.4),
+    0 30px 90px rgba(0,0,0,1),
+    0 0 35px rgba(255,217,102,0.15);
+}
+
+/* ================= TYPOGRAPHY ================= */
+
+h2 {
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+.step-indicator {
+  color: var(--yellow-dark);
+  font-family: var(--font-secondary);
+  margin-bottom: 8px;
+  font-weight: bold;
+  font-size: 0.85rem;
+}
+
+.data-point {
+  font-family: var(--font-secondary);
+  font-size: 0.9rem;
+  color: #bbb; /* slightly lighter for clarity */
+  margin-bottom: 16px;
+}
+
+.data-highlight {
+  color: var(--yellow-light);
+  font-weight: bold;
+  border-bottom: 2px solid var(--yellow-dark);
+}
+
+/* ================= MODULE ================= */
+
+.connect-module {
+  border: 1px solid var(--border-grey);
+  padding: 16px;
+  margin-bottom: 16px;
+  background: var(--glass-inner);
+}
+
+.connect-module.connected {
+  border-color: var(--yellow-dark);
+  background: rgba(255, 217, 102, 0.08);
+}
+
+.status-indicator {
+  width: 10px;
+  height: 10px;
+  background-color: red;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.connected .status-indicator {
+  background-color: var(--yellow-dark);
+  box-shadow: 0 0 8px var(--yellow-dark);
+}
+
+/* ================= PREVIEW ================= */
+
+.nft-preview-placeholder {
+  width: 100%;
+  height: 180px;
+  background: var(--glass-inner);
+  border: 1px dashed var(--yellow-dark);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: var(--font-secondary);
+  color: var(--yellow-dark);
+  margin-bottom: 24px;
+}
+
+/* ================= BUTTON ================= */
+
+.mint-button {
+  background-color: var(--yellow-dark);
+  color: #111;
+  font-weight: 900;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  padding: 18px;
+  width: 100%;
+  border: none;
+  cursor: pointer;
+
+  box-shadow: 6px 6px 0px #000;
+  transition: 0.1s ease;
+
+  margin-top: auto;
+  border-radius: 2px;
+}
+
+.mint-button:hover {
+  background-color: var(--yellow-light);
+  transform: translate(-2px, -2px);
+  box-shadow: 8px 8px 0px #000;
+}
+
+.mint-button:active {
+  transform: translate(4px, 4px);
+  box-shadow: 2px 2px 0px #000;
+}
+</style>
+</head>
+
+<body>
+
+<div class="main-container">
+
+  <div class="bento-card">
+    <span class="step-indicator">STEP 01 // INPUTS</span>
+    <h2>Link Sources</h2>
+
+    <div class="connect-module connected">
+      <div style="display:flex; align-items:center; margin-bottom:10px;">
+        <span class="status-indicator"></span>
+        <strong>DISCORD CONNECTED</strong>
+      </div>
+      <div class="data-point">User: <span class="data-highlight">CryptoKing#9921</span></div>
+    </div>
+
+    <div class="connect-module connected">
+      <div style="display:flex; align-items:center; margin-bottom:10px;">
+        <span class="status-indicator"></span>
+        <strong>WEB3 LIVE</strong>
+      </div>
+      <div class="data-point">Addr: <span class="data-highlight">0x71C...9aB2</span></div>
+    </div>
+  </div>
+
+  <div class="bento-card">
+    <span class="step-indicator">STEP 02 // ANALYSIS</span>
+    <h2>Performance Data</h2>
+
+    <div class="data-point">DISCORD ROLE DETECTED:</div>
+    <div style="font-weight:900; font-size:1.5rem; color:var(--yellow-dark); margin-bottom:24px;">
+      "OG MEMBER"
+    </div>
+
+    <div class="data-point">
+      SOCIAL SCORE: <span class="data-highlight">94/100</span>
+    </div>
+
+    <div class="data-point">
+      WALLET TENURE: <span class="data-highlight">412 DAYS</span>
+    </div>
+
+    <div style="margin-top:auto; padding-top:20px; border-top:1px solid var(--border-grey);">
+      <div class="data-point" style="color:var(--yellow-dark);">
+        STATUS: MINT ELIGIBLE_
+      </div>
+    </div>
+  </div>
+
+  <div class="bento-card" style="border-color: var(--yellow-dark);">
+    <span class="step-indicator">STEP 03 // EXECUTE</span>
+    <h2>Mint Artifact</h2>
+
+    <div class="nft-preview-placeholder">
+      [ GENERATED NFT PREVIEW ]
+    </div>
+
+    <div class="data-point">TIER: LEGENDARY</div>
+    <div class="data-point">GAS EST: 0.004 ETH</div>
+
+    <button class="mint-button">INITIALIZE MINT</button>
+  </div>
+
+</div>
+
+</body>
+</html>
