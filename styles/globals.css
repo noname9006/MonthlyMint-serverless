@@ -60,7 +60,7 @@
     content: "";
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.55);
     z-index: 0;
     pointer-events: none;
   }
@@ -108,6 +108,8 @@
     font-size: 0.85rem;
     font-weight: bold;
     letter-spacing: 0.05em;
+    margin: 0 0 4px 0;
+    text-transform: uppercase;
   }
 
   /* Data label */
@@ -115,13 +117,17 @@
     font-family: 'Courier New', monospace;
     font-size: 0.9rem;
     color: #bbb;
+    margin: 0;
+    line-height: 1.4;
   }
 
   /* Highlighted data value */
   .data-highlight {
+    font-family: 'Courier New', monospace;
     color: #fff366;
     font-weight: bold;
     border-bottom: 2px solid #ffd966;
+    font-size: 0.9rem;
   }
 
   /* Mint / primary action button */

@@ -445,7 +445,9 @@ export default function Home() {
             {/* BOTANIX DISCORD MEMBERSHIP */}
             <div>
               <p className="data-point" style={{ marginBottom: '4px' }}>BOTANIX DISCORD MEMBERSHIP:</p>
-              {isDiscordVerified && guildMember ? (
+              {!isDiscordVerified ? (
+                <span className="data-highlight" style={{ color: '#bbb', borderBottomColor: '#bbb' }}>NOT CONNECTED</span>
+              ) : guildMember ? (
                 <span className="data-highlight">CONFIRMED</span>
               ) : (
                 <a
@@ -453,7 +455,7 @@ export default function Home() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="data-highlight"
-                  style={{ textDecoration: 'none', borderBottom: '2px solid #ffd966' }}
+                  style={{ textDecoration: 'none' }}
                 >
                   CLICK TO JOIN
                 </a>
@@ -463,16 +465,16 @@ export default function Home() {
             {/* AMBASSADOR LEVEL */}
             <div>
               <p className="data-point" style={{ marginBottom: '4px' }}>AMBASSADOR LEVEL:</p>
-              <span className="data-highlight">
-                {highestRole ? highestRole.name.toUpperCase() : '—'}
+              <span className={highestRole ? 'data-highlight' : ''} style={!highestRole ? { fontFamily: "'Courier New', monospace", fontSize: '0.9rem', color: '#bbb' } : {}}>
+                {highestRole ? highestRole.name.toUpperCase() : 'NOT CONNECTED'}
               </span>
             </div>
 
             {/* TENURE */}
             <div>
               <p className="data-point" style={{ marginBottom: '4px' }}>TENURE:</p>
-              <span className="data-highlight">
-                {guildMember && tenureDays !== null ? `${tenureDays} DAYS` : 'N/A'}
+              <span className={guildMember && tenureDays !== null ? 'data-highlight' : ''} style={!(guildMember && tenureDays !== null) ? { fontFamily: "'Courier New', monospace", fontSize: '0.9rem', color: '#bbb' } : {}}>
+                {guildMember && tenureDays !== null ? `${tenureDays} DAYS` : 'NOT CONNECTED'}
               </span>
             </div>
 
@@ -484,8 +486,6 @@ export default function Home() {
                 <p className="data-point">STATUS: <span style={{ color: '#bbb', fontWeight: 'bold' }}>AWAITING INPUTS_</span></p>
               )}
             </div>
-
-            {discordError && <p style={{ color: '#ff3366', fontFamily: "'Courier New', monospace", fontSize: '0.8rem', margin: 0 }}>{discordError}</p>}
           </div>
 
           {/* ── CARD 3 — STEP 03 // EXECUTE — Push to Chain ── */}
