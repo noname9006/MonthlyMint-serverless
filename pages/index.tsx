@@ -6,6 +6,7 @@ import { useAccount, useDisconnect } from 'wagmi'
 import { SBTMinter } from '@/components/SBTMinter'
 import { MintModal } from '@/components/MintModal'
 import { chainConfig } from '@/lib/chains'
+import { ROLE_HIERARCHY } from '@/lib/discord'
 
 import type { RoleName } from '@/lib/discord'
 
@@ -18,6 +19,7 @@ type DiscordUser = {
 
 type GuildMember = {
   roles?: string[]
+  joined_at?: string
 }
 
 type DiscordAuthMessage =
@@ -40,6 +42,7 @@ export default function Home() {
   const [hasLowerTierAvailable, setHasLowerTierAvailable] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const [showMintModal, setShowMintModal] = useState(false)
+  const [currentMonth, setCurrentMonth] = useState<{ monthName: string; year: number } | null>(null)
 
   // Only check discordUser for verification, not guildMember
   // This allows users to proceed even if guild member check fails
@@ -240,6 +243,35 @@ export default function Home() {
       ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png?size=128`
       : null
 
+  // Fetch current month on mount
+  useEffect(() => {
+    fetch('/api/admin/set-current-month', { method: 'GET' })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.success && data.currentMonth) {
+          setCurrentMonth(data.currentMonth)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  // Compute tenure (days since guild join)
+  const tenureDays = useMemo(() => {
+    if (!guildMember?.joined_at) return null
+    const joined = new Date(guildMember.joined_at)
+    const now = new Date()
+    const diff = Math.floor((now.getTime() - joined.getTime()) / (1000 * 60 * 60 * 24))
+    return diff
+  }, [guildMember])
+
+  // Compute NFT tier number (0-5) from role priority (1-6 → tier 5-0)
+  const tierNumber = useMemo(() => {
+    if (!highestRole) return null
+    const roleEntry = ROLE_HIERARCHY.find(r => r.name === highestRole.name)
+    if (!roleEntry) return null
+    return ROLE_HIERARCHY.length - roleEntry.priority
+  }, [highestRole])
+
   const openDiscordPopup = () => {
     setDiscordError(null)
     setDiscordLoading(true)
@@ -410,31 +442,44 @@ export default function Home() {
               <h2 style={{ margin: '4px 0 0', fontSize: '1.25rem', fontWeight: 900, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Performance Data</h2>
             </div>
 
-            {isDiscordVerified && (
-              <div>
-                <p className="data-point" style={{ marginBottom: '4px' }}>DISCORD ROLE DETECTED:</p>
-                <p style={{ fontFamily: "'Courier New', monospace", fontSize: '1.4rem', fontWeight: 900, color: '#ffd966', margin: 0, letterSpacing: '0.05em' }}>
-                  {highestRole ? highestRole.name : 'NO ROLE DETECTED'}
-                </p>
-              </div>
-            )}
+            {/* BOTANIX DISCORD MEMBERSHIP */}
+            <div>
+              <p className="data-point" style={{ marginBottom: '4px' }}>BOTANIX DISCORD MEMBERSHIP:</p>
+              {isDiscordVerified && guildMember ? (
+                <span className="data-highlight">CONFIRMED</span>
+              ) : (
+                <a
+                  href="https://discord.gg/2D95PBCM2g"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="data-highlight"
+                  style={{ textDecoration: 'none', borderBottom: '2px solid #ffd966' }}
+                >
+                  CLICK TO JOIN
+                </a>
+              )}
+            </div>
 
-            {isConnected && address && (
-              <p className="data-point">
-                WALLET ADDRESS: <span className="data-highlight">{address.slice(0, 6)}…{address.slice(-4)}</span>
-              </p>
-            )}
+            {/* AMBASSADOR LEVEL */}
+            <div>
+              <p className="data-point" style={{ marginBottom: '4px' }}>AMBASSADOR LEVEL:</p>
+              <span className="data-highlight">
+                {highestRole ? highestRole.name.toUpperCase() : '—'}
+              </span>
+            </div>
 
-            <p className="data-point">
-              MINT PERIOD: {' '}
-              <span className="data-highlight">—</span>
-            </p>
+            {/* TENURE */}
+            <div>
+              <p className="data-point" style={{ marginBottom: '4px' }}>TENURE:</p>
+              <span className="data-highlight">
+                {guildMember && tenureDays !== null ? `${tenureDays} DAYS` : 'N/A'}
+              </span>
+            </div>
 
+            {/* STATUS */}
             <div style={{ marginTop: 'auto', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-              {canProceedToMint && !alreadyMinted ? (
-                <p className="data-point" style={{ color: '#ffd966' }}>STATUS: <span style={{ color: '#fff366', fontWeight: 'bold' }}>MINT ELIGIBLE_</span></p>
-              ) : alreadyMinted ? (
-                <p className="data-point">STATUS: <span style={{ color: '#bbb', fontWeight: 'bold' }}>ALREADY MINTED_</span></p>
+              {isDiscordVerified && isConnected ? (
+                <p className="data-point">STATUS: <span style={{ color: '#fff366', fontWeight: 'bold' }}>CONNECTED_</span></p>
               ) : (
                 <p className="data-point">STATUS: <span style={{ color: '#bbb', fontWeight: 'bold' }}>AWAITING INPUTS_</span></p>
               )}
@@ -443,11 +488,11 @@ export default function Home() {
             {discordError && <p style={{ color: '#ff3366', fontFamily: "'Courier New', monospace", fontSize: '0.8rem', margin: 0 }}>{discordError}</p>}
           </div>
 
-          {/* ── CARD 3 — STEP 03 // EXECUTE — Mint Artifact ── */}
+          {/* ── CARD 3 — STEP 03 // EXECUTE — Push to Chain ── */}
           <div className="bento-card" style={{ borderColor: '#ffd966', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div>
               <p className="step-indicator">STEP 03 // EXECUTE</p>
-              <h2 style={{ margin: '4px 0 0', fontSize: '1.25rem', fontWeight: 900, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Mint Artifact</h2>
+              <h2 style={{ margin: '4px 0 0', fontSize: '1.25rem', fontWeight: 900, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Push to Chain</h2>
             </div>
 
             {/* NFT Preview placeholder (real preview is in modal) */}
@@ -462,23 +507,35 @@ export default function Home() {
             {/* Data rows */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <p className="data-point">
-                TIER: <span className="data-highlight">{highestRole ? highestRole.name : 'N/A'}</span>
+                TIER: <span className="data-highlight">{tierNumber !== null ? String(tierNumber) : 'N/A'}</span>
               </p>
               <p className="data-point">
-                PERIOD: <span className="data-highlight">—</span>
+                PERIOD: <span className="data-highlight">
+                  {currentMonth ? `${currentMonth.monthName.toUpperCase()} ${currentMonth.year}` : 'LOADING...'}
+                </span>
               </p>
               <p className="data-point">
-                STATUS: <span className="data-highlight">{alreadyMinted ? 'MINTED' : canProceedToMint ? 'ELIGIBLE' : 'PENDING'}</span>
+                STATUS: <span className="data-highlight">
+                  {alreadyMinted && hasLowerTierAvailable
+                    ? 'PARTIAL // LOWER_TIER_AVAILABLE'
+                    : alreadyMinted
+                    ? 'EXECUTED // AWAITING_NEXT_PERIOD'
+                    : canProceedToMint
+                    ? 'AVAILABLE'
+                    : 'PENDING'}
+                </span>
               </p>
             </div>
 
             {/* Mint button */}
             <button
               onClick={() => setShowMintModal(true)}
-              disabled={!canProceedToMint}
+              disabled={!canProceedToMint && !alreadyMinted}
               className="mint-button"
             >
-              {alreadyMinted ? 'MINTED' : 'INITIALIZE MINT'}
+              {alreadyMinted && !hasLowerTierAvailable
+                ? 'EXECUTED // AWAITING_NEXT_PERIOD'
+                : 'EXECUTE FREEMINT'}
             </button>
           </div>
         </div>

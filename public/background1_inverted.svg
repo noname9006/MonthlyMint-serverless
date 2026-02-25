@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" preserveAspectRatio="xMaxYMin slice">
+  <rect width="1920" height="1080" fill="#0a0808"/>
+  <!-- Concentric arcs centered at upper-right corner (1920, 0) -->
+  <circle cx="1920" cy="0" r="120" fill="none" stroke="rgba(58,52,52,0.8)" stroke-width="1.2"/>
+  <circle cx="1920" cy="0" r="200" fill="none" stroke="rgba(58,52,52,0.8)" stroke-width="1.2"/>
+  <circle cx="1920" cy="0" r="290" fill="none" stroke="rgba(55,50,50,0.75)" stroke-width="1.2"/>
+  <circle cx="1920" cy="0" r="380" fill="none" stroke="rgba(55,50,50,0.75)" stroke-width="1.2"/>
+  <circle cx="1920" cy="0" r="475" fill="none" stroke="rgba(52,48,48,0.7)" stroke-width="1.2"/>
+  <circle cx="1920" cy="0" r="570" fill="none" stroke="rgba(52,48,48,0.7)" stroke-width="1.2"/>
+  <circle cx="1920" cy="0" r="665" fill="none" stroke="rgba(50,46,46,0.65)" stroke-width="1.2"/>
+  <circle cx="1920" cy="0" r="760" fill="none" stroke="rgba(50,46,46,0.65)" stroke-width="1.2"/>
+  <circle cx="1920" cy="0" r="860" fill="none" stroke="rgba(48,44,44,0.6)" stroke-width="1.2"/>
+  <circle cx="1920" cy="0" r="960" fill="none" stroke="rgba(48,44,44,0.6)" stroke-width="1.2"/>
+  <circle cx="1920" cy="0" r="1065" fill="none" stroke="rgba(46,42,42,0.55)" stroke-width="1.2"/>
+  <circle cx="1920" cy="0" r="1170" fill="none" stroke="rgba(46,42,42,0.55)" stroke-width="1.2"/>
+  <circle cx="1920" cy="0" r="1280" fill="none" stroke="rgba(44,40,40,0.5)" stroke-width="1.2"/>
+  <circle cx="1920" cy="0" r="1390" fill="none" stroke="rgba(44,40,40,0.5)" stroke-width="1.2"/>
+  <circle cx="1920" cy="0" r="1500" fill="none" stroke="rgba(42,38,38,0.45)" stroke-width="1.2"/>
+  <circle cx="1920" cy="0" r="1620" fill="none" stroke="rgba(42,38,38,0.45)" stroke-width="1.2"/>
+  <circle cx="1920" cy="0" r="1740" fill="none" stroke="rgba(40,36,36,0.4)" stroke-width="1.2"/>
+  <circle cx="1920" cy="0" r="1870" fill="none" stroke="rgba(40,36,36,0.4)" stroke-width="1.2"/>
+  <circle cx="1920" cy="0" r="2010" fill="none" stroke="rgba(38,34,34,0.35)" stroke-width="1.2"/>
+  <circle cx="1920" cy="0" r="2160" fill="none" stroke="rgba(38,34,34,0.35)" stroke-width="1.2"/>
+</svg>

@@ -47,7 +47,11 @@
     margin: 0;
     padding: 0;
     color: var(--white);
-    background: url('/background1_inverted.png') center center / cover no-repeat;
+    background-color: #0a0808;
+    background-image: url('/background1_inverted.svg');
+    background-repeat: no-repeat;
+    background-position: top right;
+    background-size: cover;
     position: relative;
     min-height: 100vh;
   }
