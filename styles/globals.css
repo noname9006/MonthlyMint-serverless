@@ -185,9 +185,9 @@
   /* NFT preview frame — solid square border */
   .nft-preview-placeholder {
     width: 100%;
-    height: 180px;
+    aspect-ratio: 1 / 1;
     background: var(--glass-inner);
-    border: 1px solid var(--yellow-dark);
+    border: 1px dotted var(--yellow-dark);
     border-radius: 0;
     display: flex;
     justify-content: center;
@@ -196,6 +196,8 @@
     color: var(--yellow-dark);
     margin-bottom: 24px;
     overflow: hidden;
+    padding: 5px;
+    box-sizing: border-box;
   }
 
   /* Legacy .nft-preview kept for SBTMinter (now solid square) */

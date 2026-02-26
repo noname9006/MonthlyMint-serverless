@@ -554,15 +554,15 @@ export default function Home() {
             {/* Data rows */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <p className="data-point">
-                TIER: <span style={{ color: '#fff', fontFamily: "'Courier New', monospace", fontSize: '0.9rem' }}>{tierNumber !== null ? String(tierNumber) : 'N/A'}</span>
+                TIER: <span style={{ color: '#bbb', fontFamily: "'Courier New', monospace", fontSize: '0.9rem' }}>{tierNumber !== null ? String(tierNumber) : 'N/A'}</span>
               </p>
               <p className="data-point">
-                PERIOD: <span style={{ color: '#fff', fontFamily: "'Courier New', monospace", fontSize: '0.9rem' }}>
+                PERIOD: <span style={{ color: '#bbb', fontFamily: "'Courier New', monospace", fontSize: '0.9rem' }}>
                   {currentMonth ? `${currentMonth.monthName.toUpperCase()} ${currentMonth.year}` : 'LOADING...'}
                 </span>
               </p>
               <p className="data-point">
-                STATUS: <span style={{ color: '#fff', fontFamily: "'Courier New', monospace", fontSize: '0.9rem' }}>
+                STATUS: <span style={{ color: '#bbb', fontFamily: "'Courier New', monospace", fontSize: '0.9rem' }}>
                   {alreadyMinted && hasLowerTierAvailable
                     ? 'PARTIAL // LOWER_TIER_AVAILABLE'
                     : alreadyMinted
