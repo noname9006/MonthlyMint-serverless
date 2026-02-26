@@ -577,12 +577,10 @@ export default function Home() {
             {/* Mint button */}
             <button
               onClick={() => setShowMintModal(true)}
-              disabled={!canProceedToMint && !alreadyMinted}
+              disabled={(!canProceedToMint && !hasLowerTierAvailable) || (alreadyMinted && !hasLowerTierAvailable)}
               className="mint-button"
             >
-              {alreadyMinted && !hasLowerTierAvailable
-                ? 'EXECUTED // AWAITING_NEXT_PERIOD'
-                : 'EXECUTE FREEMINT'}
+              EXECUTE FREEMINT
             </button>
           </div>
         </div>

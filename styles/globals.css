@@ -184,7 +184,8 @@
 
   /* NFT preview frame — solid square border */
   .nft-preview-placeholder {
-    width: 100%;
+    width: 60%;
+    margin: 0 auto 16px;
     aspect-ratio: 1 / 1;
     background: var(--glass-inner);
     border: 1px dotted var(--yellow-dark);
@@ -194,7 +195,6 @@
     align-items: center;
     font-family: 'Courier New', monospace;
     color: var(--yellow-dark);
-    margin-bottom: 24px;
     overflow: hidden;
     padding: 5px;
     box-sizing: border-box;
@@ -351,7 +351,7 @@
   .main-container {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 24px;
+    gap: 32px;
     max-width: 1200px;
     width: 100%;
   }
