@@ -3,7 +3,7 @@ import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount, useDisconnect } from 'wagmi'
-import { SBTMinter, type SBTMinterHandle } from '@/components/SBTMinter'
+import { SBTMinter, type SBTMinterHandle, type UnmintedLowerTier } from '@/components/SBTMinter'
 import { chainConfig } from '@/lib/chains'
 import { ROLE_HIERARCHY } from '@/lib/discord'
 import { ipfsToGateway, getMediaURI } from '@/lib/media-config'
@@ -48,6 +48,7 @@ export default function Home() {
   const [currentMonth, setCurrentMonth] = useState<{ monthName: string; year: number } | null>(null)
   const [mediaURI, setMediaURI] = useState<string | null>(null)
   const [isLoadingMedia, setIsLoadingMedia] = useState(false)
+  const [unmintedLowerTiers, setUnmintedLowerTiers] = useState<UnmintedLowerTier[]>([])
 
   const FALLBACK_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect width="200" height="200" fill="%23334155"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%2394a3b8" font-size="14"%3EImage not available%3C/text%3E%3C/svg%3E'
 
@@ -579,11 +580,23 @@ export default function Home() {
             {/* Mint button */}
             <button
               onClick={() => sbtMinterRef.current?.triggerMint()}
-              disabled={(!canProceedToMint && !hasLowerTierAvailable) || (alreadyMinted && !hasLowerTierAvailable) || mintLoading}
+              disabled={(!canProceedToMint && unmintedLowerTiers.length === 0) || (alreadyMinted && unmintedLowerTiers.length === 0) || mintLoading}
               className="mint-button"
             >
               {mintLoading ? 'MINTING...' : 'EXECUTE FREEMINT'}
             </button>
+
+            {/* Batch mint lower tiers button */}
+            {alreadyMinted && unmintedLowerTiers.length > 0 && (
+              <button
+                onClick={() => sbtMinterRef.current?.triggerBatchMint()}
+                disabled={mintLoading}
+                className="mint-button"
+                style={{ marginTop: '8px', fontSize: '0.85rem', padding: '12px' }}
+              >
+                {mintLoading ? 'MINTING...' : `MINT ALL LOWER TIERS (${unmintedLowerTiers.length}) — FREEMINT`}
+              </button>
+            )}
 
             {/* Inline feedback */}
             {mintError && <p style={{ color: '#ff4444', fontFamily: "'Courier New', monospace", fontSize: '0.85rem', marginTop: '8px' }}>{mintError}</p>}
@@ -604,6 +617,7 @@ export default function Home() {
             onError={setMintError}
             onSuccess={setMintSuccess}
             onLoadingChange={setMintLoading}
+            onUnmintedLowerTiersChange={setUnmintedLowerTiers}
           />
         )}
       </main>

@@ -50,20 +50,14 @@ export default function AdminDashboard() {
   useEffect(() => {
     const checkAdmin = async () => {
       try {
-        // Check admin status using session cookie (server-side validation)
         const response = await fetch('/api/admin/check-admin', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          credentials: 'include' // Important: include cookies
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include'
         })
-        
         const data = await response.json()
-        
         if (data.success && data.isAdmin) {
           setIsAdmin(true)
-          // Load current settings
           await loadCurrentSettings()
         } else {
           setError('Access denied - Admin privileges required')
@@ -74,17 +68,12 @@ export default function AdminDashboard() {
         setLoading(false)
       }
     }
-    
     checkAdmin()
   }, [])
 
   const loadCurrentSettings = async () => {
     try {
-      // Load current month/year
-      const monthResponse = await fetch('/api/admin/set-current-month', {
-        method: 'GET'
-      })
-      
+      const monthResponse = await fetch('/api/admin/set-current-month', { method: 'GET' })
       if (monthResponse.ok) {
         const monthData = await monthResponse.json()
         if (monthData.success && monthData.currentMonth) {
@@ -99,34 +88,24 @@ export default function AdminDashboard() {
     }
   }
 
-  // Load media storage when month/year changes
   useEffect(() => {
     if (!isAdmin) return
-    
     const loadMediaStorage = async () => {
       try {
         const response = await fetch('/api/admin/get-media-storage', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          credentials: 'include', // Important: include cookies
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ year: mediaYear, monthName: mediaMonth })
         })
-        
         if (response.ok) {
           const data = await response.json()
           if (data.success) {
-            // Create entries for all levels
             const entries: MediaEntry[] = LEVELS.map(level => {
               const existing = data.mediaStorage.find((m: any) => m.level_name === level)
               const ipfsCid = existing ? existing.ipfs_cid : ''
               const gateway = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://ipfs.io/ipfs'
-              return {
-                levelName: level,
-                ipfsCid,
-                previewUrl: ipfsCid ? `${gateway}/${ipfsCid}` : ''
-              }
+              return { levelName: level, ipfsCid, previewUrl: ipfsCid ? `${gateway}/${ipfsCid}` : '' }
             })
             setMediaEntries(entries)
             setOriginalMediaEntries(JSON.parse(JSON.stringify(entries)))
@@ -136,7 +115,6 @@ export default function AdminDashboard() {
         console.error('Failed to load media storage:', err)
       }
     }
-    
     loadMediaStorage()
   }, [mediaMonth, mediaYear, isAdmin])
 
@@ -144,52 +122,32 @@ export default function AdminDashboard() {
     setSaving(true)
     setError(null)
     setSuccess(null)
-    
     try {
-      // Save current month/year
       const monthResponse = await fetch('/api/admin/set-current-month', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include', // Important: include cookies
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ monthName: currentMonth, year: currentYear })
       })
-      
-      if (!monthResponse.ok) {
-        throw new Error('Failed to save current month/year')
-      }
-      
-      // Save media storage updates
+      if (!monthResponse.ok) throw new Error('Failed to save current month/year')
+
       const mediaUpdates = mediaEntries
         .filter(entry => entry.ipfsCid.trim() !== '')
-        .map(entry => ({
-          levelName: entry.levelName,
-          year: mediaYear,
-          monthName: mediaMonth,
-          ipfsCid: entry.ipfsCid.trim()
-        }))
+        .map(entry => ({ levelName: entry.levelName, year: mediaYear, monthName: mediaMonth, ipfsCid: entry.ipfsCid.trim() }))
       
       if (mediaUpdates.length > 0) {
         const mediaResponse = await fetch('/api/admin/update-media-storage', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          credentials: 'include', // Important: include cookies
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ mediaUpdates })
         })
-        
-        if (!mediaResponse.ok) {
-          throw new Error('Failed to save media storage')
-        }
+        if (!mediaResponse.ok) throw new Error('Failed to save media storage')
       }
-      
-      // Update original values
+
       setOriginalCurrentMonth(currentMonth)
       setOriginalCurrentYear(currentYear)
       setOriginalMediaEntries(JSON.parse(JSON.stringify(mediaEntries)))
-      
       setSuccess('Settings saved successfully!')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save settings')
@@ -208,33 +166,57 @@ export default function AdminDashboard() {
 
   const updateMediaEntry = (levelName: string, ipfsCid: string) => {
     const gateway = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://ipfs.io/ipfs'
-    setMediaEntries(prev => prev.map(entry => 
-      entry.levelName === levelName 
-        ? { 
-            ...entry, 
-            ipfsCid, 
-            previewUrl: ipfsCid ? `${gateway}/${ipfsCid}` : '' 
-          }
+    setMediaEntries(prev => prev.map(entry =>
+      entry.levelName === levelName
+        ? { ...entry, ipfsCid, previewUrl: ipfsCid ? `${gateway}/${ipfsCid}` : '' }
         : entry
     ))
   }
 
+  const selectStyle: React.CSSProperties = {
+    background: 'rgba(120,120,120,0.2)',
+    border: '1px solid #ffd966',
+    borderRadius: '2px',
+    padding: '8px 12px',
+    color: '#fff',
+    fontFamily: "'Courier New', monospace",
+    fontSize: '0.85rem',
+    textTransform: 'uppercase',
+    width: '100%',
+    cursor: 'pointer',
+  }
+
+  const inputStyle: React.CSSProperties = {
+    background: 'rgba(120,120,120,0.2)',
+    border: '1px dashed #ffd966',
+    borderRadius: '2px',
+    padding: '8px 12px',
+    color: '#fff',
+    fontFamily: "'Courier New', monospace",
+    fontSize: '0.8rem',
+    width: '100%',
+    boxSizing: 'border-box',
+  }
+
   if (loading) {
     return (
-      <main className="min-h-screen bg-background py-6 sm:py-12 px-2 sm:px-4 flex justify-center items-center">
-        <p className="text-text-primary">Loading...</p>
+      <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1 }}>
+        <p style={{ fontFamily: "'Courier New', monospace", color: '#ffd966' }}>[ LOADING... ]</p>
       </main>
     )
   }
 
   if (!isAdmin) {
     return (
-      <main className="min-h-screen bg-background py-6 sm:py-12 px-2 sm:px-4 flex justify-center items-center">
-        <div className="card-cyber p-4 sm:p-8 max-w-md w-full">
-          <h1 className="text-xl sm:text-2xl font-bold text-error mb-3 sm:mb-4">Access Denied</h1>
-          <p className="text-text-secondary mb-3 sm:mb-4 text-sm sm:text-base">{error || 'Admin privileges required'}</p>
-          <button onClick={() => router.push('/')} className="btn-cyber w-full">
-            Return to Home
+      <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', position: 'relative', zIndex: 1 }}>
+        <div className="bento-card" style={{ maxWidth: '420px', width: '100%' }}>
+          <p className="step-indicator">ACCESS DENIED</p>
+          <h1 style={{ margin: '4px 0 16px', fontSize: '1.25rem', fontWeight: 900, color: '#ff3366', textTransform: 'uppercase' }}>
+            Admin Required
+          </h1>
+          <p className="data-point" style={{ marginBottom: '16px' }}>{error || 'Admin privileges required'}</p>
+          <button onClick={() => router.push('/')} className="mint-button" style={{ fontSize: '0.85rem', padding: '12px' }}>
+            RETURN TO HOME
           </button>
         </div>
       </main>
@@ -244,154 +226,139 @@ export default function AdminDashboard() {
   return (
     <>
       <Head>
-        <title>Admin Dashboard - Botanix Ambassador Program</title>
+        <title>Admin Dashboard — Botanix Ambassador Program</title>
       </Head>
-      <main className="min-h-screen bg-background py-6 sm:py-8 px-2 sm:px-4">
-        <div className="max-w-5xl mx-auto">
-          <div className="card-cyber p-4 sm:p-6 mb-4 sm:mb-6">
-            <div className="flex items-center justify-between mb-4 sm:mb-6 flex-wrap gap-3">
-              <h1 className="text-2xl sm:text-3xl font-bold font-proxima text-text-primary uppercase">Admin Dashboard</h1>
-              <button onClick={() => router.push('/')} className="btn-cyber-secondary text-sm sm:text-base px-4 py-2">
-                Back to Home
-              </button>
-            </div>
-            
-            <div className="divider-cyber mb-4 sm:mb-6"></div>
+      <main style={{ position: 'relative', zIndex: 1, minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', padding: '40px 20px' }}>
 
-            {/* Current Month/Year Section */}
-            <div className="mb-4 sm:mb-6">
-              <h2 className="text-lg sm:text-xl font-bold font-proxima text-text-primary uppercase mb-3">Current Month and Year</h2>
-              <div className="flex gap-3 flex-wrap">
-                <div className="flex-1 min-w-[150px]">
-                  <label className="block text-text-secondary mb-1 text-sm">Month</label>
-                  <select 
-                    value={currentMonth} 
-                    onChange={(e) => setCurrentMonth(e.target.value)}
-                    className="select-admin w-full text-text-primary font-proxima uppercase text-sm"
-                  >
-                    {MONTHS.map(month => (
-                      <option key={month} value={month}>{month}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="flex-1 min-w-[150px]">
-                  <label className="block text-text-secondary mb-1 text-sm">Year</label>
-                  <select 
-                    value={currentYear} 
-                    onChange={(e) => setCurrentYear(Number(e.target.value))}
-                    className="select-admin w-full text-text-primary font-proxima uppercase text-sm"
-                  >
-                    {YEARS.map(year => (
-                      <option key={year} value={year}>{year}</option>
-                    ))}
-                  </select>
-                </div>
+        {/* Branding header */}
+        <div style={{ textAlign: 'center', marginBottom: '32px', width: '100%', maxWidth: '900px' }}>
+          <p style={{ fontFamily: "'Courier New', monospace", fontSize: '1.5rem', fontWeight: 900, color: '#ffd966', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
+            Botanix • Ambassador Program
+          </p>
+          <p style={{ fontFamily: "'Courier New', monospace", fontSize: '0.8rem', color: '#bbb', marginTop: '4px', letterSpacing: '0.05em' }}>
+            ADMIN // CONTROL PANEL
+          </p>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', maxWidth: '900px', width: '100%' }}>
+
+          {/* Card: Current Mint Period */}
+          <div className="bento-card" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <p className="step-indicator">SYS // CONFIG</p>
+              <h2 style={{ margin: '4px 0 0', fontSize: '1.1rem', fontWeight: 900, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Mint Period</h2>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div>
+                <p className="data-point" style={{ marginBottom: '6px' }}>MONTH:</p>
+                <select value={currentMonth} onChange={e => setCurrentMonth(e.target.value)} style={selectStyle}>
+                  {MONTHS.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+              </div>
+              <div>
+                <p className="data-point" style={{ marginBottom: '6px' }}>YEAR:</p>
+                <select value={currentYear} onChange={e => setCurrentYear(Number(e.target.value))} style={selectStyle}>
+                  {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
               </div>
             </div>
+            <p className="data-point" style={{ marginTop: 'auto' }}>
+              CURRENT: <span className="data-highlight">{currentMonth.toUpperCase()} {currentYear}</span>
+            </p>
+          </div>
 
-            <div className="divider-cyber mb-4 sm:mb-6"></div>
-
-            {/* Media Storage Section */}
-            <div className="mb-4 sm:mb-6">
-              <h2 className="text-lg sm:text-xl font-bold font-proxima text-text-primary uppercase mb-3">Media Storage</h2>
-              <div className="flex gap-3 flex-wrap mb-4">
-                <div className="flex-1 min-w-[150px]">
-                  <label className="block text-text-secondary mb-1 text-sm">Month</label>
-                  <select 
-                    value={mediaMonth} 
-                    onChange={(e) => setMediaMonth(e.target.value)}
-                    className="select-admin w-full text-text-primary font-proxima uppercase text-sm"
-                  >
-                    {MONTHS.map(month => (
-                      <option key={month} value={month}>{month}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="flex-1 min-w-[150px]">
-                  <label className="block text-text-secondary mb-1 text-sm">Year</label>
-                  <select 
-                    value={mediaYear} 
-                    onChange={(e) => setMediaYear(Number(e.target.value))}
-                    className="select-admin w-full text-text-primary font-proxima uppercase text-sm"
-                  >
-                    {YEARS.map(year => (
-                      <option key={year} value={year}>{year}</option>
-                    ))}
-                  </select>
-                </div>
+          {/* Card: Media Period Selector */}
+          <div className="bento-card" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <p className="step-indicator">MEDIA // PERIOD</p>
+              <h2 style={{ margin: '4px 0 0', fontSize: '1.1rem', fontWeight: 900, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Media Storage</h2>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div>
+                <p className="data-point" style={{ marginBottom: '6px' }}>MONTH:</p>
+                <select value={mediaMonth} onChange={e => setMediaMonth(e.target.value)} style={selectStyle}>
+                  {MONTHS.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
               </div>
+              <div>
+                <p className="data-point" style={{ marginBottom: '6px' }}>YEAR:</p>
+                <select value={mediaYear} onChange={e => setMediaYear(Number(e.target.value))} style={selectStyle}>
+                  {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
+              </div>
+            </div>
+            <p className="data-point" style={{ marginTop: 'auto' }}>
+              VIEWING: <span className="data-highlight">{mediaMonth.toUpperCase()} {mediaYear}</span>
+            </p>
+          </div>
 
-              {/* Media Entries */}
-              <div className="space-y-3">
-                {mediaEntries.map(entry => (
-                  <div key={entry.levelName} className="pb-3 border-b border-accent border-opacity-20 last:border-0">
-                    <div className="flex gap-3 flex-wrap items-start">
-                      <div className="flex-1 min-w-[200px]">
-                        <label className="block text-text-primary font-bold mb-1 text-sm">{entry.levelName}</label>
-                        <input
-                          type="text"
-                          value={entry.ipfsCid}
-                          onChange={(e) => updateMediaEntry(entry.levelName, e.target.value)}
-                          placeholder="Enter IPFS CID (e.g., QmXxx...)"
-                          className="input-admin w-full text-text-primary font-mono text-xs"
-                        />
-                      </div>
-                      <div className="w-20 h-20 sm:w-24 sm:h-24">
-                        {entry.previewUrl ? (
-                          <img 
-                            src={entry.previewUrl} 
-                            alt={`${entry.levelName} preview`}
-                            className="preview-frame w-full h-full object-cover"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none'
-                            }}
-                          />
-                        ) : (
-                          <div 
-                            className="preview-frame w-full h-full bg-surface flex items-center justify-center"
-                          >
-                            <span className="text-text-secondary text-xs">No preview</span>
-                          </div>
-                        )}
-                      </div>
+        </div>
+
+        {/* Media entries card — full width */}
+        <div className="bento-card" style={{ maxWidth: '900px', width: '100%', marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div>
+            <p className="step-indicator">MEDIA // IPFS REGISTRY</p>
+            <h2 style={{ margin: '4px 0 0', fontSize: '1.1rem', fontWeight: 900, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              NFT Media — {mediaMonth.toUpperCase()} {mediaYear}
+            </h2>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {mediaEntries.map((entry, i) => (
+              <div key={entry.levelName} style={{ display: 'flex', gap: '12px', alignItems: 'center', paddingBottom: i < mediaEntries.length - 1 ? '12px' : 0, borderBottom: i < mediaEntries.length - 1 ? '1px solid rgba(255,255,255,0.08)' : 'none' }}>
+                <div style={{ flex: 1 }}>
+                  <p className="data-point" style={{ marginBottom: '4px', color: '#ffd966' }}>{entry.levelName.toUpperCase()}</p>
+                  <input
+                    type="text"
+                    value={entry.ipfsCid}
+                    onChange={e => updateMediaEntry(entry.levelName, e.target.value)}
+                    placeholder="IPFS CID (e.g. QmXxx...)"
+                    style={inputStyle}
+                  />
+                </div>
+                <div style={{ width: '64px', height: '64px', flexShrink: 0 }}>
+                  {entry.previewUrl ? (
+                    <img
+                      src={entry.previewUrl}
+                      alt={`${entry.levelName} preview`}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', border: '1px solid #ffd966', borderRadius: 0 }}
+                      onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+                    />
+                  ) : (
+                    <div style={{ width: '100%', height: '100%', border: '1px dashed rgba(255,217,102,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ fontFamily: "'Courier New', monospace", fontSize: '0.6rem', color: '#bbb' }}>N/A</span>
                     </div>
-                  </div>
-                ))}
+                  )}
+                </div>
               </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="divider-cyber mb-4"></div>
-            <div className="flex gap-3 flex-wrap">
-              <button 
-                onClick={handleSave} 
-                disabled={saving}
-                className="btn-cyber flex-1 min-w-[150px] text-sm sm:text-base"
-              >
-                {saving ? 'Saving...' : 'Save Changes'}
-              </button>
-              <button 
-                onClick={handleDiscard} 
-                disabled={saving}
-                className="btn-cyber-secondary flex-1 min-w-[150px] text-sm sm:text-base"
-              >
-                Discard Changes
-              </button>
-            </div>
-
-            {error && (
-              <div className="mt-3 p-3 bg-error bg-opacity-10 border border-error" style={{ borderRadius: '4px' }}>
-                <p className="text-error text-sm">{error}</p>
-              </div>
-            )}
-
-            {success && (
-              <div className="mt-3 p-3 bg-accent bg-opacity-10 border border-accent" style={{ borderRadius: '4px' }}>
-                <p className="text-accent text-sm">{success}</p>
-              </div>
-            )}
+            ))}
           </div>
         </div>
+
+        {/* Action buttons */}
+        <div style={{ maxWidth: '900px', width: '100%', marginTop: '24px', display: 'flex', gap: '16px' }}>
+          <button onClick={handleSave} disabled={saving} className="mint-button" style={{ flex: 1 }}>
+            {saving ? 'SAVING...' : 'SAVE CHANGES'}
+          </button>
+          <button onClick={handleDiscard} disabled={saving} className="logout-button" style={{ flex: 1 }}>
+            DISCARD CHANGES
+          </button>
+          <button onClick={() => router.push('/')} className="mint-button" style={{ flex: 1, fontSize: '0.85rem', padding: '12px', background: 'transparent', color: '#ffd966', border: '1px solid #ffd966' }}>
+            ← BACK TO HOME
+          </button>
+        </div>
+
+        {/* Feedback */}
+        {error && (
+          <div style={{ maxWidth: '900px', width: '100%', marginTop: '16px', padding: '12px', border: '1px solid #ff3366', background: 'rgba(255,51,102,0.08)' }}>
+            <p style={{ fontFamily: "'Courier New', monospace", fontSize: '0.85rem', color: '#ff3366', margin: 0 }}>{error}</p>
+          </div>
+        )}
+        {success && (
+          <div style={{ maxWidth: '900px', width: '100%', marginTop: '16px', padding: '12px', border: '1px solid #ffd966', background: 'rgba(255,217,102,0.08)' }}>
+            <p style={{ fontFamily: "'Courier New', monospace", fontSize: '0.85rem', color: '#ffd966', margin: 0 }}>{success}</p>
+          </div>
+        )}
       </main>
     </>
   )

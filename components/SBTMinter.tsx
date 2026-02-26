@@ -19,11 +19,15 @@ interface SBTMinterProps {
   onError?: (msg: string | null) => void
   onSuccess?: (msg: string | null) => void
   onLoadingChange?: (loading: boolean) => void
+  onUnmintedLowerTiersChange?: (tiers: UnmintedLowerTier[]) => void
 }
 
 export interface SBTMinterHandle {
   triggerMint: () => void
+  triggerBatchMint: () => void
 }
+
+export type { UnmintedLowerTier }
 
 // Fallback image for when IPFS media fails to load
 const FALLBACK_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect width="200" height="200" fill="%23334155"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%2394a3b8" font-size="14"%3EImage not available%3C/text%3E%3C/svg%3E'
@@ -37,7 +41,7 @@ interface UnmintedLowerTier {
   priority: number
 }
 
-export const SBTMinter = forwardRef<SBTMinterHandle, SBTMinterProps>(function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinted = false, hasLowerTierAvailable = false, hideUI = false, onError, onSuccess, onLoadingChange }: SBTMinterProps, ref) {
+export const SBTMinter = forwardRef<SBTMinterHandle, SBTMinterProps>(function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinted = false, hasLowerTierAvailable = false, hideUI = false, onError, onSuccess, onLoadingChange, onUnmintedLowerTiersChange }: SBTMinterProps, ref) {
   const { address } = useAccount()
   const config = useConfig()
   const [loading, setLoading] = useState(false)
@@ -817,13 +821,14 @@ export const SBTMinter = forwardRef<SBTMinterHandle, SBTMinterProps>(function SB
   // Computed variables for better readability
   const isMintButtonDisabled = isMinted || loading || !address || !!pendingTxHash || isLoadingMonth || isLoadingMedia || !mediaURI
 
-  // Expose triggerMint to parent via ref
-  useImperativeHandle(ref, () => ({ triggerMint: handleMint }))
+  // Expose triggerMint and triggerBatchMint to parent via ref
+  useImperativeHandle(ref, () => ({ triggerMint: handleMint, triggerBatchMint: handleBatchMintLowerTiers }))
 
   // Propagate state changes to parent callbacks
   useEffect(() => { onError?.(error) }, [error]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { onSuccess?.(success) }, [success]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { onLoadingChange?.(loading) }, [loading]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { onUnmintedLowerTiersChange?.(unmintedLowerTiers) }, [unmintedLowerTiers]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (hideUI) return null
 
