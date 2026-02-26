@@ -51,7 +51,7 @@
     background-image: url('/background1_inverted.png');
     background-repeat: no-repeat;
     background-position: bottom right;
-    background-size: auto;
+    background-size: cover;
     position: relative;
     min-height: 100vh;
   }
