@@ -3,8 +3,7 @@ import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount, useDisconnect } from 'wagmi'
-import { SBTMinter } from '@/components/SBTMinter'
-import { MintModal } from '@/components/MintModal'
+import { SBTMinter, type SBTMinterHandle } from '@/components/SBTMinter'
 import { chainConfig } from '@/lib/chains'
 import { ROLE_HIERARCHY } from '@/lib/discord'
 import { ipfsToGateway, getMediaURI } from '@/lib/media-config'
@@ -42,7 +41,10 @@ export default function Home() {
   const [alreadyMinted, setAlreadyMinted] = useState(false)
   const [hasLowerTierAvailable, setHasLowerTierAvailable] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
-  const [showMintModal, setShowMintModal] = useState(false)
+  const sbtMinterRef = useRef<SBTMinterHandle>(null)
+  const [mintError, setMintError] = useState<string | null>(null)
+  const [mintSuccess, setMintSuccess] = useState<string | null>(null)
+  const [mintLoading, setMintLoading] = useState(false)
   const [currentMonth, setCurrentMonth] = useState<{ monthName: string; year: number } | null>(null)
   const [mediaURI, setMediaURI] = useState<string | null>(null)
   const [isLoadingMedia, setIsLoadingMedia] = useState(false)
@@ -576,33 +578,33 @@ export default function Home() {
 
             {/* Mint button */}
             <button
-              onClick={() => setShowMintModal(true)}
-              disabled={(!canProceedToMint && !hasLowerTierAvailable) || (alreadyMinted && !hasLowerTierAvailable)}
+              onClick={() => sbtMinterRef.current?.triggerMint()}
+              disabled={(!canProceedToMint && !hasLowerTierAvailable) || (alreadyMinted && !hasLowerTierAvailable) || mintLoading}
               className="mint-button"
             >
-              EXECUTE FREEMINT
+              {mintLoading ? 'MINTING...' : 'EXECUTE FREEMINT'}
             </button>
+
+            {/* Inline feedback */}
+            {mintError && <p style={{ color: '#ff4444', fontFamily: "'Courier New', monospace", fontSize: '0.85rem', marginTop: '8px' }}>{mintError}</p>}
+            {mintSuccess && <p style={{ color: '#ffd966', fontFamily: "'Courier New', monospace", fontSize: '0.85rem', marginTop: '8px' }}>{mintSuccess}</p>}
           </div>
         </div>
 
-        {/* Responsive style handled in globals.css */}
-        {/* Mint Modal */}
+        {/* Headless SBTMinter — runs mint logic, no UI */}
         {highestRole && discordUser && (
-          <MintModal isOpen={showMintModal} onClose={() => setShowMintModal(false)}>
-            <div className="mb-4 sm:mb-6">
-              <h2 className="text-2xl sm:text-3xl font-bold text-white uppercase text-center" style={{ fontFamily: "'Courier New', monospace" }}>Mint Your NFT</h2>
-              <p className="text-center text-sm sm:text-base mt-2" style={{ color: '#bbb' }}>
-                Level: <span style={{ color: '#ffd966', fontWeight: 'bold' }}>{highestRole.name}</span>
-              </p>
-            </div>
-            <SBTMinter
-              discordId={discordUser.id}
-              roleName={highestRole.name}
-              sectionNumber={0}
-              alreadyMinted={alreadyMinted}
-              hasLowerTierAvailable={hasLowerTierAvailable}
-            />
-          </MintModal>
+          <SBTMinter
+            ref={sbtMinterRef}
+            discordId={discordUser.id}
+            roleName={highestRole.name}
+            sectionNumber={0}
+            alreadyMinted={alreadyMinted}
+            hasLowerTierAvailable={hasLowerTierAvailable}
+            hideUI
+            onError={setMintError}
+            onSuccess={setMintSuccess}
+            onLoadingChange={setMintLoading}
+          />
         )}
       </main>
     </>

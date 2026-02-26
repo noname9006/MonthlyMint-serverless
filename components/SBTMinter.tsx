@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, forwardRef, useImperativeHandle } from 'react'
 import { useAccount, useWriteContract, useConfig } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { ethers } from 'ethers'
@@ -15,6 +15,14 @@ interface SBTMinterProps {
   sectionNumber?: number
   alreadyMinted?: boolean
   hasLowerTierAvailable?: boolean
+  hideUI?: boolean
+  onError?: (msg: string | null) => void
+  onSuccess?: (msg: string | null) => void
+  onLoadingChange?: (loading: boolean) => void
+}
+
+export interface SBTMinterHandle {
+  triggerMint: () => void
 }
 
 // Fallback image for when IPFS media fails to load
@@ -29,7 +37,7 @@ interface UnmintedLowerTier {
   priority: number
 }
 
-export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinted = false, hasLowerTierAvailable = false }: SBTMinterProps) {
+export const SBTMinter = forwardRef<SBTMinterHandle, SBTMinterProps>(function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinted = false, hasLowerTierAvailable = false, hideUI = false, onError, onSuccess, onLoadingChange }: SBTMinterProps, ref) {
   const { address } = useAccount()
   const config = useConfig()
   const [loading, setLoading] = useState(false)
@@ -809,6 +817,16 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
   // Computed variables for better readability
   const isMintButtonDisabled = isMinted || loading || !address || !!pendingTxHash || isLoadingMonth || isLoadingMedia || !mediaURI
 
+  // Expose triggerMint to parent via ref
+  useImperativeHandle(ref, () => ({ triggerMint: handleMint }))
+
+  // Propagate state changes to parent callbacks
+  useEffect(() => { onError?.(error) }, [error]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { onSuccess?.(success) }, [success]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { onLoadingChange?.(loading) }, [loading]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (hideUI) return null
+
   return(
     <div className={isMainPage ? 'card-cyber p-6 mt-8' : ''}>
       {isMainPage && (
@@ -896,5 +914,5 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
       </div>
     </div>
   )
-}
+})
 
