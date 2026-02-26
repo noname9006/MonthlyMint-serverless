@@ -613,6 +613,7 @@ export default function Home() {
             onSuccess={setMintSuccess}
             onLoadingChange={setMintLoading}
             onUnmintedLowerTiersChange={setUnmintedLowerTiers}
+            onMintStatusChange={setAlreadyMinted}
           />
         )}
       </main>

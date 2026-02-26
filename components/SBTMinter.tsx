@@ -20,6 +20,7 @@ interface SBTMinterProps {
   onSuccess?: (msg: string | null) => void
   onLoadingChange?: (loading: boolean) => void
   onUnmintedLowerTiersChange?: (tiers: UnmintedLowerTier[]) => void
+  onMintStatusChange?: (isMinted: boolean) => void
 }
 
 export interface SBTMinterHandle {
@@ -41,7 +42,7 @@ interface UnmintedLowerTier {
   priority: number
 }
 
-export const SBTMinter = forwardRef<SBTMinterHandle, SBTMinterProps>(function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinted = false, hasLowerTierAvailable = false, hideUI = false, onError, onSuccess, onLoadingChange, onUnmintedLowerTiersChange }: SBTMinterProps, ref) {
+export const SBTMinter = forwardRef<SBTMinterHandle, SBTMinterProps>(function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinted = false, hasLowerTierAvailable = false, hideUI = false, onError, onSuccess, onLoadingChange, onUnmintedLowerTiersChange, onMintStatusChange }: SBTMinterProps, ref) {
   const { address } = useAccount()
   const config = useConfig()
   const [loading, setLoading] = useState(false)
@@ -829,6 +830,7 @@ export const SBTMinter = forwardRef<SBTMinterHandle, SBTMinterProps>(function SB
   useEffect(() => { onSuccess?.(success) }, [success]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { onLoadingChange?.(loading) }, [loading]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { onUnmintedLowerTiersChange?.(unmintedLowerTiers) }, [unmintedLowerTiers]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { onMintStatusChange?.(isMinted) }, [isMinted]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (hideUI) return null
 
