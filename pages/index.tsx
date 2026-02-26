@@ -52,6 +52,11 @@ export default function Home() {
 
   const FALLBACK_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect width="200" height="200" fill="%23334155"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%2394a3b8" font-size="14"%3EImage not available%3C/text%3E%3C/svg%3E'
 
+  // Update hasLowerTierAvailable whenever unmintedLowerTiers changes
+  useEffect(() => {
+    setHasLowerTierAvailable(unmintedLowerTiers.length > 0)
+  }, [unmintedLowerTiers])
+
   // Only check discordUser for verification, not guildMember
   // This allows users to proceed even if guild member check fails
   // Guild membership and roles are validated server-side during minting
@@ -595,7 +600,6 @@ export default function Home() {
 
             {/* Inline feedback */}
             {mintError && <p style={{ color: '#ff4444', fontFamily: "'Courier New', monospace", fontSize: '0.85rem', marginTop: '8px' }}>{mintError}</p>}
-            {mintSuccess && <p style={{ color: '#ffd966', fontFamily: "'Courier New', monospace", fontSize: '0.85rem', marginTop: '8px' }}>{mintSuccess}</p>}
           </div>
         </div>
 
