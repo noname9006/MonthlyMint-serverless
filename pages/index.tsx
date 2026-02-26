@@ -7,6 +7,7 @@ import { SBTMinter } from '@/components/SBTMinter'
 import { MintModal } from '@/components/MintModal'
 import { chainConfig } from '@/lib/chains'
 import { ROLE_HIERARCHY } from '@/lib/discord'
+import { ipfsToGateway, getMediaURI } from '@/lib/media-config'
 
 import type { RoleName } from '@/lib/discord'
 
@@ -43,6 +44,10 @@ export default function Home() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [showMintModal, setShowMintModal] = useState(false)
   const [currentMonth, setCurrentMonth] = useState<{ monthName: string; year: number } | null>(null)
+  const [mediaURI, setMediaURI] = useState<string | null>(null)
+  const [isLoadingMedia, setIsLoadingMedia] = useState(false)
+
+  const FALLBACK_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect width="200" height="200" fill="%23334155"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%2394a3b8" font-size="14"%3EImage not available%3C/text%3E%3C/svg%3E'
 
   // Only check discordUser for verification, not guildMember
   // This allows users to proceed even if guild member check fails
@@ -272,6 +277,35 @@ export default function Home() {
     return ROLE_HIERARCHY.length - roleEntry.priority
   }, [highestRole])
 
+  // Fetch media for NFT preview when role + month are both known
+  useEffect(() => {
+    if (!highestRole || !currentMonth) {
+      setMediaURI(null)
+      return
+    }
+    const fetchMedia = async () => {
+      setIsLoadingMedia(true)
+      try {
+        const res = await fetch('/api/nft/get-media', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ levelName: highestRole.name, year: currentMonth.year, monthName: currentMonth.monthName }),
+        })
+        if (res.ok) {
+          const data = await res.json()
+          if (data.success && data.ipfsCid) {
+            setMediaURI(`ipfs://${data.ipfsCid}`)
+            return
+          }
+        }
+      } catch { /* fall through to env fallback */ }
+      setMediaURI(getMediaURI(highestRole.name, currentMonth.year, currentMonth.monthName))
+    }
+    fetchMedia().finally(() => setIsLoadingMedia(false))
+  }, [highestRole, currentMonth])
+
+  const mediaGatewayURL = mediaURI ? ipfsToGateway(mediaURI) : null
+
   const openDiscordPopup = () => {
     setDiscordError(null)
     setDiscordLoading(true)
@@ -415,7 +449,13 @@ export default function Home() {
               )}
               {isDiscordVerified && !isConnected && (
                 <div style={{ opacity: 1 }}>
-                  <ConnectButton label="CONNECT WALLET" showBalance={false} chainStatus="none" />
+                  <ConnectButton.Custom>
+                    {({ openConnectModal }) => (
+                      <button onClick={openConnectModal} className="mint-button" style={{ fontSize: '0.85rem', padding: '12px' }}>
+                        CONNECT WALLET
+                      </button>
+                    )}
+                  </ConnectButton.Custom>
                 </div>
               )}
               {isConnected && (
@@ -495,10 +535,17 @@ export default function Home() {
               <h2 style={{ margin: '4px 0 0', fontSize: '1.25rem', fontWeight: 900, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Push to Chain</h2>
             </div>
 
-            {/* NFT Preview placeholder (real preview is in modal) */}
+            {/* NFT Preview */}
             <div className="nft-preview-placeholder">
-              {canProceedToMint ? (
-                <span style={{ fontSize: '0.9rem', letterSpacing: '0.05em' }}>[ PREVIEW IN MINT MODAL ]</span>
+              {isLoadingMedia ? (
+                <span style={{ fontSize: '0.9rem', letterSpacing: '0.05em' }}>[ LOADING MEDIA... ]</span>
+              ) : mediaGatewayURL ? (
+                <img
+                  src={mediaGatewayURL}
+                  alt="NFT Preview"
+                  style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', filter: 'drop-shadow(0 0 10px rgba(255,217,102,0.3))' }}
+                  onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_IMAGE }}
+                />
               ) : (
                 <span style={{ fontSize: '0.9rem', letterSpacing: '0.05em' }}>[ CONNECT TO PREVIEW ]</span>
               )}
@@ -507,15 +554,15 @@ export default function Home() {
             {/* Data rows */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <p className="data-point">
-                TIER: <span className="data-highlight">{tierNumber !== null ? String(tierNumber) : 'N/A'}</span>
+                TIER: <span style={{ color: '#fff', fontFamily: "'Courier New', monospace", fontSize: '0.9rem' }}>{tierNumber !== null ? String(tierNumber) : 'N/A'}</span>
               </p>
               <p className="data-point">
-                PERIOD: <span className="data-highlight">
+                PERIOD: <span style={{ color: '#fff', fontFamily: "'Courier New', monospace", fontSize: '0.9rem' }}>
                   {currentMonth ? `${currentMonth.monthName.toUpperCase()} ${currentMonth.year}` : 'LOADING...'}
                 </span>
               </p>
               <p className="data-point">
-                STATUS: <span className="data-highlight">
+                STATUS: <span style={{ color: '#fff', fontFamily: "'Courier New', monospace", fontSize: '0.9rem' }}>
                   {alreadyMinted && hasLowerTierAvailable
                     ? 'PARTIAL // LOWER_TIER_AVAILABLE'
                     : alreadyMinted
