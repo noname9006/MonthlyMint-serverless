@@ -577,26 +577,21 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Mint button */}
+            {/* Single mint button — switches between primary mint and lower-tier batch */}
             <button
-              onClick={() => sbtMinterRef.current?.triggerMint()}
-              disabled={(!canProceedToMint && unmintedLowerTiers.length === 0) || (alreadyMinted && unmintedLowerTiers.length === 0) || mintLoading}
+              onClick={() => alreadyMinted && unmintedLowerTiers.length > 0
+                ? sbtMinterRef.current?.triggerBatchMint()
+                : sbtMinterRef.current?.triggerMint()
+              }
+              disabled={(alreadyMinted && unmintedLowerTiers.length === 0) || (!canProceedToMint && !alreadyMinted && unmintedLowerTiers.length === 0) || mintLoading}
               className="mint-button"
             >
-              {mintLoading ? 'MINTING...' : 'EXECUTE FREEMINT'}
+              {mintLoading
+                ? 'MINTING...'
+                : alreadyMinted && unmintedLowerTiers.length > 0
+                  ? `MINT ${unmintedLowerTiers.length} LOWER TIER${unmintedLowerTiers.length > 1 ? 'S' : ''}`
+                  : 'EXECUTE FREEMINT'}
             </button>
-
-            {/* Batch mint lower tiers button */}
-            {alreadyMinted && unmintedLowerTiers.length > 0 && (
-              <button
-                onClick={() => sbtMinterRef.current?.triggerBatchMint()}
-                disabled={mintLoading}
-                className="mint-button"
-                style={{ marginTop: '8px', fontSize: '0.85rem', padding: '12px' }}
-              >
-                {mintLoading ? 'MINTING...' : `MINT ALL LOWER TIERS (${unmintedLowerTiers.length}) — FREEMINT`}
-              </button>
-            )}
 
             {/* Inline feedback */}
             {mintError && <p style={{ color: '#ff4444', fontFamily: "'Courier New', monospace", fontSize: '0.85rem', marginTop: '8px' }}>{mintError}</p>}
