@@ -178,8 +178,8 @@
   }
 
   .connected .status-indicator {
-    background: var(--yellow-dark);
-    box-shadow: 0 0 8px var(--yellow-dark);
+    background: #00ff00;
+    box-shadow: 0 0 8px #00ff00;
   }
 
   /* NFT preview frame — solid square border */

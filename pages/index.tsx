@@ -546,7 +546,7 @@ export default function Home() {
             {/* NFT Preview */}
             <div className="nft-preview-placeholder">
               {isLoadingMedia ? (
-                <span style={{ fontSize: '0.9rem', letterSpacing: '0.05em' }}>[ LOADING MEDIA... ]</span>
+                <span style={{ fontSize: '0.9rem', letterSpacing: '0.05em' }}>LOADING MEDIA...</span>
               ) : mediaGatewayURL ? (
                 <img
                   src={mediaGatewayURL}
@@ -555,7 +555,7 @@ export default function Home() {
                   onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_IMAGE }}
                 />
               ) : (
-                <span style={{ fontSize: '0.9rem', letterSpacing: '0.05em' }}>[ CONNECT TO PREVIEW ]</span>
+                <span style={{ fontSize: '0.9rem', letterSpacing: '0.05em' }}>CONNECT TO PREVIEW</span>
               )}
             </div>
 
