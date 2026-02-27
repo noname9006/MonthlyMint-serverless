@@ -584,10 +584,14 @@ export default function Home() {
 
             {/* Single mint button — switches between primary mint and lower-tier batch */}
             <button
-              onClick={() => alreadyMinted && unmintedLowerTiers.length > 0
-                ? sbtMinterRef.current?.triggerBatchMint()
-                : sbtMinterRef.current?.triggerMint()
-              }
+              onClick={() => {
+                setMintLoading(true)
+                if (alreadyMinted && unmintedLowerTiers.length > 0) {
+                  sbtMinterRef.current?.triggerBatchMint()
+                } else {
+                  sbtMinterRef.current?.triggerMint()
+                }
+              }}
               disabled={(alreadyMinted && unmintedLowerTiers.length === 0) || (!canProceedToMint && !alreadyMinted && unmintedLowerTiers.length === 0) || mintLoading}
               className="mint-button"
             >
