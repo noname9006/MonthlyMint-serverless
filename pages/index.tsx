@@ -617,9 +617,14 @@ export default function Home() {
             alreadyMinted={alreadyMinted}
             hasLowerTierAvailable={hasLowerTierAvailable}
             hideUI
-            onError={setMintError}
-            onSuccess={setMintSuccess}
-            onLoadingChange={setMintLoading}
+            onError={(err) => {
+              setMintError(err)
+              setMintLoading(false)
+            }}
+            onSuccess={(msg) => {
+              setMintSuccess(msg)
+              setMintLoading(false)
+            }}
             onUnmintedLowerTiersChange={setUnmintedLowerTiers}
             onMintStatusChange={setAlreadyMinted}
           />
