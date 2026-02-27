@@ -294,6 +294,7 @@ export const SBTMinter = forwardRef<SBTMinterHandle, SBTMinterProps>(function SB
         // This was the main role mint - update local state
         setLocalMinted(true)
         setPendingTxHash(null)
+        setSuccess('NFT minted successfully!')
         // Fetch unminted lower tiers to check if they exist
         fetchUnmintedLowerTiers().catch((err) => {
           console.error('Error fetching unminted lower tiers after mint:', err)
@@ -304,6 +305,7 @@ export const SBTMinter = forwardRef<SBTMinterHandle, SBTMinterProps>(function SB
         // Even if logging fails, the mint succeeded on-chain
         setLocalMinted(true)
         setPendingTxHash(null)
+        setSuccess('NFT minted successfully! (Note: database logging failed)')
         // Remove from loggingInProgress on API failure to allow retry
         setLoggingInProgress(prev => {
           const newSet = new Set(prev)
