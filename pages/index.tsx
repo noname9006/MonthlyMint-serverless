@@ -400,10 +400,10 @@ export default function Home() {
       <main style={{ position: 'relative', zIndex: 1, minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
         {/* Branding header */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <p style={{ fontFamily: "'Courier New', monospace", fontSize: '1.5rem', fontWeight: 900, color: '#ffd966', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0, textShadow: '0 2px 8px rgba(0, 0, 0, 0.4)' }}>
+          <p style={{ fontFamily: "'Courier New', monospace", fontSize: '1.5rem', fontWeight: 900, color: '#ffd966', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0, textShadow: '0 2px 8px rgba(0, 0, 0, 0.6)' }}>
             Botanix • Ambassador Program
           </p>
-          <p style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", fontSize: '0.95rem', color: '#bbb', marginTop: '8px', fontWeight: 400, textShadow: '0 2px 8px rgba(0, 0, 0, 0.4)' }}>
+          <p style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", fontSize: '0.95rem', color: '#bbb', marginTop: '8px', fontWeight: 400, textShadow: '0 2px 8px rgba(0, 0, 0, 0.6)' }}>
             Immutable proof of your contributions. Mint your achievements monthly.
           </p>
         </div>
