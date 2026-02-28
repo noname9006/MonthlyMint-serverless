@@ -314,6 +314,42 @@ export default function Home() {
 
   const mediaGatewayURL = mediaURI ? ipfsToGateway(mediaURI) : null
 
+  // Reformat RainbowKit balance display to show 8 decimals instead of 3
+  useEffect(() => {
+    const reformatBalance = () => {
+      // Find the balance element in RainbowKit's account modal
+      const balanceElement = document.querySelector('[data-rk] div[style*="font-weight: 600"]')
+      if (balanceElement && balanceElement.textContent) {
+        const text = balanceElement.textContent.trim()
+        // Match pattern like "0.123 BTC" where BTC is any symbol
+        const match = text.match(/^([\d.]+)\s+(\w+)$/)
+        if (match) {
+          const [, value, symbol] = match
+          const numValue = parseFloat(value)
+          // Only reformat if it's not already 8 decimals
+          if (!isNaN(numValue) && !text.includes('.') || value.split('.')[1]?.length !== 8) {
+            balanceElement.textContent = `${numValue.toFixed(8)} ${symbol}`
+          }
+        }
+      }
+    }
+
+    // Use MutationObserver to watch for the modal appearing
+    const observer = new MutationObserver(() => {
+      reformatBalance()
+    })
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    })
+
+    // Also reformat on mount if modal is already open
+    reformatBalance()
+
+    return () => observer.disconnect()
+  }, [])
+
   const openDiscordPopup = () => {
     setDiscordError(null)
     setDiscordLoading(true)
@@ -468,7 +504,42 @@ export default function Home() {
               )}
               {isConnected && (
                 <div>
-                  <ConnectButton label="CONNECTED" showBalance={false} chainStatus="none" />
+                  <ConnectButton.Custom>
+                    {({ account, chain, openAccountModal, openChainModal, mounted }) => {
+                      const ready = mounted;
+                      const connected = ready && account && chain;
+
+                      return (
+                        <div
+                          {...(!ready && {
+                            'aria-hidden': true,
+                            'style': {
+                              opacity: 0,
+                              pointerEvents: 'none',
+                              userSelect: 'none',
+                            },
+                          })}
+                        >
+                          {(() => {
+                            if (!connected) {
+                              return null;
+                            }
+
+                            return (
+                              <button
+                                onClick={openAccountModal}
+                                type="button"
+                                className="mint-button"
+                                style={{ fontSize: '0.85rem', padding: '12px' }}
+                              >
+                                CONNECTED
+                              </button>
+                            );
+                          })()}
+                        </div>
+                      );
+                    }}
+                  </ConnectButton.Custom>
                 </div>
               )}
             </div>
