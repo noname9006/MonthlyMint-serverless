@@ -81,6 +81,8 @@ export default function AdminDashboard() {
           setCurrentYear(monthData.currentMonth.year)
           setOriginalCurrentMonth(monthData.currentMonth.monthName)
           setOriginalCurrentYear(monthData.currentMonth.year)
+          setMediaMonth(monthData.currentMonth.monthName)
+          setMediaYear(monthData.currentMonth.year)
         }
       }
     } catch (err) {
