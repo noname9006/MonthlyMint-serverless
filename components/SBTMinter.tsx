@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, forwardRef, useImperativeHandle } from 'react'
 import { useAccount, useWriteContract, useConfig } from 'wagmi'
 import { waitForTransactionReceipt } from 'wagmi/actions'
 import { ethers } from 'ethers'
@@ -15,7 +15,20 @@ interface SBTMinterProps {
   sectionNumber?: number
   alreadyMinted?: boolean
   hasLowerTierAvailable?: boolean
+  hideUI?: boolean
+  onError?: (msg: string | null) => void
+  onSuccess?: (msg: string | null) => void
+  onLoadingChange?: (loading: boolean) => void
+  onUnmintedLowerTiersChange?: (tiers: UnmintedLowerTier[]) => void
+  onMintStatusChange?: (isMinted: boolean) => void
 }
+
+export interface SBTMinterHandle {
+  triggerMint: () => void
+  triggerBatchMint: () => void
+}
+
+export type { UnmintedLowerTier }
 
 // Fallback image for when IPFS media fails to load
 const FALLBACK_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect width="200" height="200" fill="%23334155"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%2394a3b8" font-size="14"%3EImage not available%3C/text%3E%3C/svg%3E'
@@ -29,7 +42,7 @@ interface UnmintedLowerTier {
   priority: number
 }
 
-export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinted = false, hasLowerTierAvailable = false }: SBTMinterProps) {
+export const SBTMinter = forwardRef<SBTMinterHandle, SBTMinterProps>(function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinted = false, hasLowerTierAvailable = false, hideUI = false, onError, onSuccess, onLoadingChange, onUnmintedLowerTiersChange, onMintStatusChange }: SBTMinterProps, ref) {
   const { address } = useAccount()
   const config = useConfig()
   const [loading, setLoading] = useState(false)
@@ -281,6 +294,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
         // This was the main role mint - update local state
         setLocalMinted(true)
         setPendingTxHash(null)
+        setSuccess('NFT minted successfully!')
         // Fetch unminted lower tiers to check if they exist
         fetchUnmintedLowerTiers().catch((err) => {
           console.error('Error fetching unminted lower tiers after mint:', err)
@@ -291,6 +305,7 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
         // Even if logging fails, the mint succeeded on-chain
         setLocalMinted(true)
         setPendingTxHash(null)
+        setSuccess('NFT minted successfully! (Note: database logging failed)')
         // Remove from loggingInProgress on API failure to allow retry
         setLoggingInProgress(prev => {
           const newSet = new Set(prev)
@@ -809,6 +824,18 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
   // Computed variables for better readability
   const isMintButtonDisabled = isMinted || loading || !address || !!pendingTxHash || isLoadingMonth || isLoadingMedia || !mediaURI
 
+  // Expose triggerMint and triggerBatchMint to parent via ref
+  useImperativeHandle(ref, () => ({ triggerMint: handleMint, triggerBatchMint: handleBatchMintLowerTiers }))
+
+  // Propagate state changes to parent callbacks
+  useEffect(() => { onError?.(error) }, [error]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { onSuccess?.(success) }, [success]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { onLoadingChange?.(loading) }, [loading]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { onUnmintedLowerTiersChange?.(unmintedLowerTiers) }, [unmintedLowerTiers]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { onMintStatusChange?.(isMinted) }, [isMinted]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (hideUI) return null
+
   return(
     <div className={isMainPage ? 'card-cyber p-6 mt-8' : ''}>
       {isMainPage && (
@@ -875,11 +902,9 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
         </div>
 
         <div className="flex-1 min-w-[300px]">
-          <div className="nft-preview card-cyber p-4 flex justify-center items-center">
+          <div className="nft-preview-placeholder" style={{ height: 'auto', minHeight: '180px' }}>
             {isLoadingMonth || isLoadingMedia ? (
-              <div className="max-w-full max-h-96 flex items-center justify-center">
-                <p className="text-text-secondary">Loading media...</p>
-              </div>
+              <p style={{ fontFamily: "'Courier New', monospace", color: '#ffd966', fontSize: '0.9rem' }}>[ LOADING MEDIA... ]</p>
             ) : mediaGatewayURL ? (
               <img 
                 src={mediaGatewayURL} 
@@ -891,16 +916,12 @@ export function SBTMinter({ discordId, roleName, sectionNumber = 3, alreadyMinte
                 }}
               />
             ) : (
-              <img 
-                src={FALLBACK_IMAGE} 
-                alt="No media available"
-                className="max-w-full max-h-96 object-contain"
-              />
+              <p style={{ fontFamily: "'Courier New', monospace", color: '#ffd966', fontSize: '0.9rem' }}>[ NO MEDIA CONFIGURED ]</p>
             )}
           </div>
         </div>
       </div>
     </div>
   )
-}
+})
 

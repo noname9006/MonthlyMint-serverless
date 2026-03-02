@@ -3,212 +3,404 @@
 @tailwind utilities;
 
 :root {
-  /* Botanix Color Palette - Cyber-Bauhaus adaptation */
-  --color-primary: #ffd966; /* dark yellow */
-  --color-primary-dark: #211d1d; /* dark grey */
-  --color-secondary: #fff366; /* light yellow */
-  --color-secondary-light: #ffffff; /* white */
-  
-  /* Cyber-Bauhaus colors */
-  --color-background: #211d1d; /* warmer dark instead of #0a0a0a */
-  --color-surface: #292525; /* lighter instead of #1a1a1a */
-  --color-border: #ffd966; /* yellow borders */
-  --color-text-primary: #ffffff; /* white text */
-  --color-text-secondary: #aaa; /* softer grey instead of #a0a0a0 */
-  --color-text-inverse: #0a0a0a; /* black on yellow */
-  --color-accent: #ffd966; /* yellow accent */
-  --color-accent-neon: #00ff88; /* neon green */
+  /* Cyber-Bauhaus Glassmorphism design system */
+  --yellow-dark: #ffd966;
+  --yellow-light: #fff366;
+  --white: #ffffff;
+  --border-grey: rgba(255, 255, 255, 0.25);
+  --glass-bg: linear-gradient(145deg, rgba(255,245,200,0.08), rgba(255,255,255,0.06));
+  --glass-inner: rgba(120,120,120,0.32);
+  --font-primary: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-secondary: 'Courier New', monospace;
+
+  /* Legacy aliases (keep for admin pages) */
+  --color-primary: #ffd966;
+  --color-primary-dark: #211d1d;
+  --color-secondary: #fff366;
+  --color-secondary-light: #ffffff;
+  --color-background: #0a0808;
+  --color-surface: #1a1616;
+  --color-border: #ffd966;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #bbb;
+  --color-text-inverse: #111;
+  --color-accent: #ffd966;
+  --color-accent-neon: #00ff88;
   --color-error: #ff3366;
   --color-success: #00ff88;
-  
-  /* Cyber-Bauhaus effects */
   --glow-yellow: 0 0 10px rgba(255, 217, 102, 0.5), 0 0 20px rgba(255, 217, 102, 0.3);
   --glow-yellow-soft: 0 0 15px rgba(255, 217, 102, 0.1);
   --glow-neon: 0 0 10px rgba(0, 255, 136, 0.5), 0 0 20px rgba(0, 255, 136, 0.3);
   --border-width: 3px;
   --border-grey-soft: rgba(255, 255, 255, 0.2);
   --border-width-soft: 1px;
-  
-  /* Font stacks */
-  --font-geist: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-proxima: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-geist: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-proxima: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
 @layer base {
   html {
-    font-family: var(--font-geist);
+    font-family: var(--font-primary);
   }
-  
+
   body {
-    @apply bg-background text-text-primary;
     margin: 0;
     padding: 0;
+    color: var(--white);
+    background-color: #0a0808;
+    background-image: url('/background1_inverted.png');
+    background-repeat: no-repeat;
+    background-position: bottom right;
+    background-size: cover;
+    position: relative;
+    min-height: 100vh;
   }
-  
+
+  body::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.33);
+    z-index: 0;
+    pointer-events: none;
+  }
+
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-proxima);
+    font-family: var(--font-primary);
     font-weight: 700;
     letter-spacing: 0.5px;
   }
 }
 
 @layer components {
-  .btn-cyber {
-    @apply px-6 py-3 bg-accent text-text-inverse font-bold uppercase tracking-wider transition-all duration-200;
-    border: 1px solid var(--color-accent);
-    border-radius: 2px;
-    box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.5);
+  /* Glassmorphism bento card */
+  .bento-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(18px) saturate(140%);
+    border: 1px solid var(--border-grey);
+    border-radius: 4px;
+    padding: 24px;
+    position: relative;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.15), 0 25px 80px rgba(0,0,0,0.95), inset 0 0 14px rgba(255,255,255,0.06);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
   }
-  
+
+  .bento-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: rgba(255,255,255,0.3);
+    opacity: 0.3;
+  }
+
+  .bento-card:hover {
+    border-color: var(--yellow-dark);
+    box-shadow: 0 0 0 1px rgba(255,217,102,0.4), 0 30px 90px rgba(0,0,0,1), 0 0 35px rgba(255,217,102,0.15);
+  }
+
+  /* Step indicator label */
+  .step-indicator {
+    color: #ffd966;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    font-weight: bold;
+    letter-spacing: 0.05em;
+    margin: 0 0 4px 0;
+    text-transform: uppercase;
+  }
+
+  /* Data label */
+  .data-point {
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    color: #bbb;
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  /* Highlighted data value */
+  .data-highlight {
+    font-family: 'Courier New', monospace;
+    color: #fff366;
+    font-weight: bold;
+    border-bottom: 2px solid #ffd966;
+    font-size: 0.9rem;
+  }
+
+  /* Mint / primary action button */
+  .mint-button {
+    background-color: var(--yellow-dark);
+    color: #111;
+    font-weight: 900;
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    padding: 18px;
+    width: 100%;
+    border: none;
+    box-shadow: 6px 6px 0px #000;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, transform 0.1s ease, box-shadow 0.1s ease;
+    letter-spacing: 0.05em;
+  }
+
+  .mint-button:hover:not(:disabled) {
+    background-color: var(--yellow-light);
+    transform: translate(-2px, -2px);
+    box-shadow: 8px 8px 0px #000;
+  }
+
+  .mint-button:active:not(:disabled) {
+    transform: translate(4px, 4px);
+    box-shadow: 2px 2px 0px #000;
+  }
+
+  .mint-button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background-color: #bba040;
+  }
+
+  /* Connect / status module */
+  .connect-module {
+    border: 1px solid rgba(255,255,255,0.25);
+    padding: 16px;
+    margin-bottom: 16px;
+    background: rgba(120,120,120,0.32);
+  }
+
+  .connect-module.connected {
+    border-color: var(--yellow-dark);
+    background: rgba(255,217,102,0.08);
+  }
+
+  /* Status dot */
+  .status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: red;
+    flex-shrink: 0;
+  }
+
+  .connected .status-indicator {
+    background: #00ff00;
+    box-shadow: 0 0 8px #00ff00;
+  }
+
+  /* NFT preview frame — solid square border */
+  .nft-preview-placeholder {
+    width: 60%;
+    margin: 0 auto 16px;
+    aspect-ratio: 1 / 1;
+    background: var(--glass-inner);
+    border: 1px dotted var(--yellow-dark);
+    border-radius: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Courier New', monospace;
+    color: var(--yellow-dark);
+    overflow: hidden;
+    padding: 5px;
+    box-sizing: border-box;
+  }
+
+  /* Legacy .nft-preview kept for SBTMinter (now solid square) */
+  .nft-preview {
+    border: 1px solid var(--yellow-dark);
+    border-radius: 0;
+    padding: 1rem;
+  }
+
+  /* Legacy card-cyber kept for admin pages */
+  .card-cyber {
+    background: var(--glass-bg);
+    backdrop-filter: blur(18px) saturate(140%);
+    border: 1px solid var(--border-grey);
+    border-radius: 4px;
+    position: relative;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.15), 0 25px 80px rgba(0,0,0,0.95), inset 0 0 14px rgba(255,255,255,0.06);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .card-cyber:hover {
+    border-color: var(--yellow-dark);
+    box-shadow: 0 0 0 1px rgba(255,217,102,0.4), 0 30px 90px rgba(0,0,0,1), 0 0 35px rgba(255,217,102,0.15);
+  }
+
+  /* Legacy btn-cyber kept for admin pages */
+  .btn-cyber {
+    @apply px-6 py-3 font-bold uppercase tracking-wider transition-all duration-200;
+    background-color: var(--yellow-dark);
+    color: #111;
+    border: none;
+    border-radius: 2px;
+    box-shadow: 4px 4px 0px #000;
+    cursor: pointer;
+  }
+
   .btn-cyber:hover:not(:disabled) {
-    background: var(--color-background);
-    color: var(--color-accent);
-    box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.5);
+    background-color: var(--yellow-light);
+    box-shadow: 6px 6px 0px #000;
     transform: translate(-1px, -1px);
   }
-  
+
   .btn-cyber:active:not(:disabled) {
-    box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.5);
-    transform: translateY(2px);
+    box-shadow: 2px 2px 0px #000;
+    transform: translate(2px, 2px);
   }
-  
+
   .btn-cyber:disabled {
     @apply opacity-40 cursor-not-allowed;
-    background: var(--color-surface);
-    color: #d4c050;
-    border-color: var(--color-text-secondary);
+    background-color: #bba040;
   }
-  
+
   .btn-cyber-secondary {
-    @apply px-6 py-3 bg-surface font-bold uppercase tracking-wider transition-all duration-200;
+    @apply px-6 py-3 font-bold uppercase tracking-wider transition-all duration-200;
     color: var(--color-error);
+    background: transparent;
     border: 1px solid var(--color-error);
     border-radius: 2px;
     box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.5);
+    cursor: pointer;
   }
-  
+
   .btn-cyber-secondary:hover {
     background: var(--color-error);
-    color: var(--color-background);
+    color: #111;
     box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.5);
     transform: translate(-1px, -1px);
   }
-  
-  .card-cyber {
-    @apply bg-surface;
-    border: 1px solid var(--border-grey-soft);
-    border-radius: 4px;
-    position: relative;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
-  }
-  
-  .card-cyber:hover {
-    border-color: var(--color-accent);
-    box-shadow: var(--glow-yellow-soft);
-  }
-  
+
   .badge-cyber {
     @apply px-3 py-1 text-xs font-bold uppercase tracking-wider;
-    background: var(--color-surface);
-    border: 1px solid var(--border-grey-soft);
+    background: rgba(120,120,120,0.32);
+    border: 1px solid var(--border-grey);
     border-radius: 2px;
-    transition: border-color 0.3s ease, color 0.3s ease;
   }
-  
-  .badge-cyber:hover {
-    border-color: var(--color-accent);
-    color: var(--color-accent);
-  }
-  
+
   .input-cyber {
-    @apply bg-surface transition-all duration-200;
-    border: 1px solid var(--border-grey-soft);
+    background: rgba(120,120,120,0.2);
+    border: 1px solid var(--border-grey);
     border-radius: 4px;
+    color: var(--white);
+    transition: border-color 0.2s ease;
   }
-  
+
   .input-cyber:focus {
     outline: none;
-    border-color: var(--color-accent);
-    box-shadow: 0 0 0 3px var(--glow-yellow-soft);
+    border-color: var(--yellow-dark);
+    box-shadow: 0 0 0 2px rgba(255,217,102,0.15);
   }
-  
+
   .divider-cyber {
     height: 1px;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      var(--border-grey-soft) 20%,
-      var(--border-grey-soft) 80%,
-      transparent
-    );
+    background: linear-gradient(90deg, transparent, var(--border-grey) 20%, var(--border-grey) 80%, transparent);
     margin: 24px 0;
   }
-  
+
   /* Admin dashboard specific styles */
   .input-admin {
-    @apply bg-surface;
-    border: 1px dashed var(--color-accent);
+    background: rgba(120,120,120,0.2);
+    border: 1px dashed var(--yellow-dark);
     border-radius: 4px;
     padding: 0.5rem;
+    color: var(--white);
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
   }
-  
+
   .input-admin:focus {
     outline: none;
-    border-color: var(--color-secondary);
+    border-color: var(--yellow-light);
     box-shadow: var(--glow-yellow-soft);
   }
-  
+
   .select-admin {
-    @apply bg-surface;
-    border: 1px solid var(--color-accent);
+    background: rgba(120,120,120,0.2);
+    border: 1px solid var(--yellow-dark);
     border-radius: 4px;
     padding: 0.5rem;
+    color: var(--white);
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
   }
-  
-  .select-admin:hover {
-    border-color: var(--color-secondary);
-    box-shadow: var(--glow-yellow-soft);
-  }
-  
+
+  .select-admin:hover,
   .select-admin:focus {
+    border-color: var(--yellow-light);
+    box-shadow: var(--glow-yellow-soft);
     outline: none;
-    border-color: var(--color-secondary);
-    box-shadow: var(--glow-yellow-soft);
   }
-  
+
   .preview-frame {
-    border: 1px dashed var(--color-accent);
-    border-radius: 4px;
+    border: 1px solid var(--yellow-dark);
+    border-radius: 0;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
   }
-  
+
   .preview-frame:hover {
-    border-color: var(--color-secondary);
+    border-color: var(--yellow-light);
     box-shadow: var(--glow-yellow-soft);
   }
-  
-  /* NFT Preview frame with dashed border */
-  .nft-preview {
-    border: 2px dashed var(--color-accent);
-    padding: 1rem;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
-  }
-  
-  .nft-preview:hover {
-    border-color: var(--color-secondary);
-    box-shadow: var(--glow-yellow-soft);
-  }
-  
+
   /* Avatar with smooth transition */
   .avatar-cyber {
     transition: transform 0.3s ease, filter 0.3s ease;
   }
-  
+
   .avatar-cyber:hover {
     transform: scale(1.05);
     filter: brightness(1.1);
+  }
+
+  /* Bento grid main container */
+  .main-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+    max-width: 1200px;
+    width: 100%;
+  }
+
+  /* Logout / destructive action button */
+  .logout-button {
+    background: transparent;
+    color: #ff3366;
+    border: 1px solid #ff3366;
+    font-weight: 900;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    padding: 12px;
+    width: 100%;
+    box-shadow: 4px 4px 0px #000;
+    border-radius: 2px;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: background-color 0.15s ease, transform 0.1s ease, box-shadow 0.1s ease;
+  }
+
+  .logout-button:hover {
+    background: #ff3366;
+    color: #111;
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px #000;
+  }
+
+  .logout-button:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px #000;
+  }
+}
+
+@media (max-width: 900px) {
+  .main-container {
+    grid-template-columns: 1fr;
   }
 }
 
