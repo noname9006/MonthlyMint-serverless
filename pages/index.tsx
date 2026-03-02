@@ -38,6 +38,7 @@ export default function Home() {
   const [highestRole, setHighestRole] = useState<{ id: string; name: RoleName } | null>(null)
   const [discordLoading, setDiscordLoading] = useState(false)
   const [discordError, setDiscordError] = useState<string | null>(null)
+  const [isCheckingMintStatus, setIsCheckingMintStatus] = useState(true)
   const [alreadyMinted, setAlreadyMinted] = useState(false)
   const [hasLowerTierAvailable, setHasLowerTierAvailable] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
@@ -91,6 +92,7 @@ export default function Home() {
   // Check mint status when wallet and Discord are connected
   useEffect(() => {
     if (isConnected && isDiscordVerified && discordUser && highestRole) {
+      setIsCheckingMintStatus(true)
       fetch('/api/nft/check-mint-status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -114,6 +116,11 @@ export default function Home() {
         .catch(err => {
           console.error('Failed to check mint status:', err)
         })
+        .finally(() => {
+          setIsCheckingMintStatus(false)
+        })
+    } else {
+      setIsCheckingMintStatus(false)
     }
   }, [isConnected, isDiscordVerified, discordUser, highestRole])
 
@@ -592,14 +599,21 @@ export default function Home() {
                   sbtMinterRef.current?.triggerMint()
                 }
               }}
-              disabled={(alreadyMinted && unmintedLowerTiers.length === 0) || (!canProceedToMint && !alreadyMinted && unmintedLowerTiers.length === 0) || mintLoading}
+              disabled={
+                isCheckingMintStatus ||
+                (alreadyMinted && unmintedLowerTiers.length === 0) ||
+                (!canProceedToMint && !alreadyMinted && unmintedLowerTiers.length === 0) ||
+                mintLoading
+              }
               className="mint-button"
             >
               {mintLoading
                 ? 'MINTING...'
-                : alreadyMinted && unmintedLowerTiers.length > 0
-                  ? `MINT ${unmintedLowerTiers.length} LOWER TIER${unmintedLowerTiers.length > 1 ? 'S' : ''}`
-                  : 'EXECUTE FREEMINT'}
+                : isCheckingMintStatus
+                  ? 'LOADING...'
+                  : alreadyMinted && unmintedLowerTiers.length > 0
+                    ? `MINT ${unmintedLowerTiers.length} LOWER TIER${unmintedLowerTiers.length > 1 ? 'S' : ''}`
+                    : 'EXECUTE FREEMINT'}
             </button>
 
             {/* Inline feedback */}
